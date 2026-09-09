@@ -24,6 +24,8 @@
       "position_x": { "default": "mdi:axis-x-arrow" },
       "position_y": { "default": "mdi:axis-y-arrow" },
       "halow_rssi": { "default": "mdi:wifi" },
+      "battery_current": { "default": "mdi:current-dc" },
+      "battery_voltage": { "default": "mdi:flash" },
       "body_firmware": { "default": "mdi:chip" }
     },
     "binary_sensor": {
@@ -31,8 +33,7 @@
       "rtk_fix": { "default": "mdi:crosshairs-gps" },
       "person_detection": { "default": "mdi:motion-sensor" },
       "follow_mode": { "default": "mdi:walk" },
-      "child_lock": { "default": "mdi:lock" },
-      "wired_charging": { "default": "mdi:power-plug" }
+      "child_lock": { "default": "mdi:lock" }
     },
     "button": {
       "wake": { "default": "mdi:alarm" },

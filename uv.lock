@@ -2972,6 +2972,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", marker = "extra == 'dev'", specifier = ">=3.10,<4" },
+    { name = "aiohttp", marker = "extra == 'studio'", specifier = ">=3.10,<4" },
     { name = "aiomqtt", specifier = ">=2.5,<3" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
@@ -2980,7 +2982,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["studio", "dev"]
 
 [[package]]
 name = "yarbo-local-ha"

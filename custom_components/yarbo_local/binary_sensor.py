@@ -66,12 +66,6 @@ SENSORS: tuple[YarboBinarySensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda s: s.child_lock,
     ),
-    YarboBinarySensorDescription(
-        key="wired_charging",
-        translation_key="wired_charging",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda s: s.wired_charging,
-    ),
 )
 
 

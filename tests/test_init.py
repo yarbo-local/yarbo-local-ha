@@ -22,12 +22,12 @@ async def test_setup_entities_and_unload(
     assert loaded_entry.state is ConfigEntryState.LOADED
 
     assert hass.states.get("sensor.yarbo_test_battery").state == "100"
-    assert hass.states.get("sensor.yarbo_test_activity").state == "charging"
+    assert hass.states.get("sensor.yarbo_test_activity").state == "sleeping"
     assert hass.states.get("sensor.yarbo_test_head").state == "none"
     assert hass.states.get("sensor.yarbo_test_firmware").state == "3.14.11"
     assert hass.states.get("sensor.yarbo_test_network_path").state == "halow"
     assert hass.states.get("binary_sensor.yarbo_test_awake").state == "off"
-    assert hass.states.get("binary_sensor.yarbo_test_charging").state == "on"
+    assert hass.states.get("binary_sensor.yarbo_test_charging").state == "off"
     assert hass.states.get("binary_sensor.yarbo_test_problem").state == "off"
     assert hass.states.get("binary_sensor.yarbo_test_online").state == "on"
 
@@ -105,4 +105,4 @@ async def test_diagnostics_redact_location_and_identity(
     assert diag["entry"]["unique_id"] == "**REDACTED**"
     assert diag["raw"]["rtk_base_data"] == "**REDACTED**"
     assert diag["raw"]["BatteryMSG"]["capacity"] == 100
-    assert diag["state"]["activity"] == "charging"
+    assert diag["state"]["activity"] == "sleeping"

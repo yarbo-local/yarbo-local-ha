@@ -110,6 +110,8 @@
       "position_x": { "name": "Position X" },
       "position_y": { "name": "Position Y" },
       "halow_rssi": { "name": "HaLow signal" },
+      "battery_current": { "name": "Battery current" },
+      "battery_voltage": { "name": "Battery voltage" },
       "body_firmware": { "name": "Body firmware" }
     },
     "binary_sensor": {
@@ -118,8 +120,7 @@
       "rtk_fix": { "name": "RTK fix" },
       "person_detection": { "name": "Person detection" },
       "follow_mode": { "name": "Follow mode" },
-      "child_lock": { "name": "Child lock" },
-      "wired_charging": { "name": "Wired charging" }
+      "child_lock": { "name": "Child lock" }
     },
     "button": {
       "wake": { "name": "Wake" },

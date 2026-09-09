@@ -8,8 +8,8 @@ Status: **pre-alpha, read-only.** It connects, shows the robot's state, and can 
 
 | Platform | Entities |
 |---|---|
-| Sensor | Battery, Activity (sleeping, idle, working, returning, charging, error, ...), Head, Ambient temperature, Firmware; diagnostics: Error code, Battery health, RTK status, Network path (HaLow, Wi-Fi, LTE); disabled by default: Satellites, Heading, Position X/Y, HaLow signal, Body firmware |
-| Binary sensor | Awake, Charging, Problem, RTK fix, Person detection, Follow mode; diagnostics: Online, Child lock, Wired charging |
+| Sensor | Battery, Activity (sleeping, idle, working, returning, charging, error, ...), Head, Ambient temperature, Firmware; diagnostics: Error code, Battery health, RTK status, Network path (HaLow, Wi-Fi, LTE); disabled by default: Satellites, Heading, Position X/Y, HaLow signal, Battery current, Battery voltage, Body firmware |
+| Binary sensor | Awake, Charging, Problem, RTK fix, Person detection, Follow mode; diagnostics: Online, Child lock |
 | Device tracker | Location from the robot's own GNSS fix, with fix quality, satellites and HDOP as attributes |
 | Button | Wake, Refresh |
 
