@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: hassfest
+        # Fails on the requirements check until yarbo-local is on PyPI.
+        continue-on-error: true
+        uses: home-assistant/actions/hassfest@master
+      - name: HACS
+        uses: hacs/action@main
+        with:
+          category: integration
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported Home Assistant, and the latest release.
+        phcc: ["0.13.346", "0.13.364"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: yarbo-local-ha
+      - uses: actions/checkout@v4
+        with:
+          repository: yarbo-local/yarbo-local
+          path: yarbo-local
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+      - name: Install
+        working-directory: yarbo-local-ha
+        run: |
+          uv sync --group dev
+          uv pip install "pytest-homeassistant-custom-component==${{ matrix.phcc }}"
+      - name: Lint
+        working-directory: yarbo-local-ha
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Types
+        working-directory: yarbo-local-ha
+        run: uv run mypy
+      - name: Tests
+        working-directory: yarbo-local-ha
+        run: uv run pytest -q

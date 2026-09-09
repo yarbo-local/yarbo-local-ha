@@ -1,0 +1,137 @@
+{
+  "config": {
+    "flow_title": "Yarbo {serial}",
+    "step": {
+      "user": {
+        "title": "Connect to your Yarbo",
+        "description": "Enter the address of the robot on your network. Nothing leaves your LAN; no Yarbo account is involved.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "serial": "Serial number"
+        },
+        "data_description": {
+          "host": "IP address or DNS name of the robot itself (the rover), for example 192.168.50.184 or yarbo.localdomain. The base station relays the same data and also works.",
+          "port": "MQTT port on the robot. 1883 unless you changed it.",
+          "serial": "Optional. Only needed when more than one robot publishes through the same address."
+        }
+      },
+      "discovery_confirm": {
+        "title": "Yarbo found",
+        "description": "Set up Yarbo {serial} at {host}?"
+      },
+      "reconfigure": {
+        "title": "Update the robot address",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        },
+        "data_description": {
+          "host": "New IP address or DNS name of the robot.",
+          "port": "MQTT port on the robot."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No robot answered at that address. Check that Home Assistant can reach the robot's network and that the robot is powered.",
+      "wrong_serial": "A robot answered, but its serial number differs from the one you entered."
+    },
+    "abort": {
+      "already_configured": "This robot is already set up. Its address has been updated.",
+      "cannot_connect": "The discovered device did not answer as a Yarbo robot.",
+      "reconfigure_successful": "Address updated.",
+      "unique_id_mismatch": "That address belongs to a different robot."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Yarbo Local options",
+        "data": {
+          "subnet": "Subnet to scan",
+          "keep_awake": "Keep the robot awake"
+        },
+        "data_description": {
+          "subnet": "Optional CIDR such as 192.168.50.0/24. When the robot stops answering at its last address, this subnet is scanned for it. Useful when the robot lives on another VLAN where Home Assistant cannot see DHCP.",
+          "keep_awake": "Re-send the wake command every two and a half minutes so telemetry streams continuously. Costs battery while undocked; off by default."
+        }
+      }
+    },
+    "error": {
+      "invalid_subnet": "Enter a subnet in CIDR form, for example 192.168.50.0/24."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "activity": {
+        "name": "Activity",
+        "state": {
+          "sleeping": "Sleeping",
+          "idle": "Idle",
+          "calculating_route": "Calculating route",
+          "heading_to_area": "Heading to area",
+          "working": "Working",
+          "waypoint": "Waypoint",
+          "completed": "Completed",
+          "paused": "Paused",
+          "returning": "Returning to dock",
+          "charging": "Charging",
+          "error": "Error"
+        }
+      },
+      "head_type": {
+        "name": "Head",
+        "state": {
+          "none": "None",
+          "snow_blower": "Snow blower",
+          "leaf_blower": "Leaf blower",
+          "mower": "Mower",
+          "smart_cover": "Smart cover",
+          "mower_pro": "Mower Pro",
+          "trimmer": "Trimmer",
+          "unknown": "Unknown"
+        }
+      },
+      "ambient_temperature": { "name": "Ambient temperature" },
+      "error_code": { "name": "Error code" },
+      "battery_health": { "name": "Battery health" },
+      "rtk_status": { "name": "RTK status" },
+      "network_path": {
+        "name": "Network path",
+        "state": {
+          "halow": "HaLow",
+          "wifi": "Wi-Fi",
+          "lte": "LTE"
+        }
+      },
+      "firmware": { "name": "Firmware" },
+      "satellites": { "name": "Satellites" },
+      "heading": { "name": "Heading" },
+      "position_x": { "name": "Position X" },
+      "position_y": { "name": "Position Y" },
+      "halow_rssi": { "name": "HaLow signal" },
+      "body_firmware": { "name": "Body firmware" }
+    },
+    "binary_sensor": {
+      "awake": { "name": "Awake" },
+      "online": { "name": "Online" },
+      "rtk_fix": { "name": "RTK fix" },
+      "person_detection": { "name": "Person detection" },
+      "follow_mode": { "name": "Follow mode" },
+      "child_lock": { "name": "Child lock" },
+      "wired_charging": { "name": "Wired charging" }
+    },
+    "button": {
+      "wake": { "name": "Wake" },
+      "refresh": { "name": "Refresh" }
+    },
+    "device_tracker": {
+      "location": { "name": "Location" }
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "The robot did not accept {command}: {error}"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+[project]
+name = "yarbo-local-ha"
+version = "0.1.0"
+description = "Home Assistant integration for Yarbo robots over the robot's own LAN MQTT broker"
+readme = "README.md"
+requires-python = ">=3.14.2"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest-homeassistant-custom-component==0.13.346",
+  "yarbo-local",
+  "aiodhcpwatcher==1.2.7",  # for the dhcp component, which the manifest depends on
+  "aiodiscover==3.3.2",  # for the dhcp component, which the manifest depends on
+  "cached-ipaddress==1.1.2",  # for the dhcp component, which the manifest depends on
+  "ruff>=0.13",
+  "mypy>=1.17",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+yarbo-local = { path = "../yarbo-local", editable = true }
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["A", "B", "C4", "E", "F", "I", "N", "PL", "PT", "RUF", "S", "SIM", "T20", "UP", "W"]
+ignore = ["PLR0913", "PLR2004"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004", "S106", "SLF001"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+known-first-party = ["custom_components.yarbo_local", "yarbo_local"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+packages = ["custom_components.yarbo_local"]
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

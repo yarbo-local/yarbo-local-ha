@@ -1,0 +1,42 @@
+{
+  "entity": {
+    "sensor": {
+      "activity": {
+        "default": "mdi:robot-mower",
+        "state": {
+          "sleeping": "mdi:sleep",
+          "idle": "mdi:robot-mower-outline",
+          "charging": "mdi:battery-charging",
+          "returning": "mdi:home-import-outline",
+          "paused": "mdi:pause-circle-outline",
+          "error": "mdi:alert-circle"
+        }
+      },
+      "head_type": { "default": "mdi:puzzle" },
+      "ambient_temperature": { "default": "mdi:thermometer" },
+      "error_code": { "default": "mdi:alert-circle-outline" },
+      "battery_health": { "default": "mdi:battery-heart-variant" },
+      "rtk_status": { "default": "mdi:satellite-variant" },
+      "network_path": { "default": "mdi:lan" },
+      "firmware": { "default": "mdi:chip" },
+      "satellites": { "default": "mdi:satellite-variant" },
+      "heading": { "default": "mdi:compass" },
+      "position_x": { "default": "mdi:axis-x-arrow" },
+      "position_y": { "default": "mdi:axis-y-arrow" },
+      "halow_rssi": { "default": "mdi:wifi" },
+      "body_firmware": { "default": "mdi:chip" }
+    },
+    "binary_sensor": {
+      "awake": { "default": "mdi:sleep", "state": { "on": "mdi:eye" } },
+      "rtk_fix": { "default": "mdi:crosshairs-gps" },
+      "person_detection": { "default": "mdi:motion-sensor" },
+      "follow_mode": { "default": "mdi:walk" },
+      "child_lock": { "default": "mdi:lock" },
+      "wired_charging": { "default": "mdi:power-plug" }
+    },
+    "button": {
+      "wake": { "default": "mdi:alarm" },
+      "refresh": { "default": "mdi:refresh" }
+    }
+  }
+}

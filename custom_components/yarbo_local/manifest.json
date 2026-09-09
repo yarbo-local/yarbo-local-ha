@@ -1,0 +1,19 @@
+{
+  "domain": "yarbo_local",
+  "name": "Yarbo Local",
+  "codeowners": ["@clara-mostly-human"],
+  "config_flow": true,
+  "dependencies": ["dhcp"],
+  "dhcp": [
+    { "hostname": "yarbo*" },
+    { "macaddress": "C8FE0F*" },
+    { "registered_devices": true }
+  ],
+  "documentation": "https://github.com/yarbo-local/yarbo-local-ha",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/yarbo-local/yarbo-local-ha/issues",
+  "loggers": ["yarbo_local"],
+  "requirements": ["yarbo-local==0.1.0.dev0"],
+  "version": "0.1.0"
+}
