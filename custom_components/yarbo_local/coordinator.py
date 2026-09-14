@@ -33,6 +33,9 @@ MAP_EDIT_COMMANDS = frozenset(
     {f"{verb}_{obj}" for verb in ("save", "del", "del_list", "del_all") for obj in _MAP_OBJECTS}
     | {"map_recovery", "erase_map", "correct_map"}
 )
+# Feedback topics the card draws: plan progress, return route, detected obstacles.
+# Formats come from the steves2j reverse engineering; not yet seen on our robot.
+FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback", "cloud_points_feedback"})
 # The app saves an area twice within a second; wait for the burst to settle.
 MAP_REFRESH_DELAY = 2.0
 
@@ -54,6 +57,8 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.serial: str = robot.serial or ""
         self.site_map: SiteMap | None = None
         self._map_listeners: list[Callable[[], None]] = []
+        self._feedback_listeners: list[Callable[[str, Any], None]] = []
+        self.feedback: dict[str, Any] = {}
         self._map_refresh: asyncio.TimerHandle | None = None
         entry.async_on_unload(robot.on_state(self._on_state))
         entry.async_on_unload(robot.session.add_connection_listener(self._on_connection))
@@ -79,6 +84,10 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     # -- map
 
+    def add_feedback_listener(self, cb: Callable[[str, Any], None]) -> Callable[[], None]:
+        self._feedback_listeners.append(cb)
+        return lambda: self._feedback_listeners.remove(cb)
+
     def add_map_listener(self, cb: Callable[[], None]) -> Callable[[], None]:
         self._map_listeners.append(cb)
         return lambda: self._map_listeners.remove(cb)
@@ -99,6 +108,11 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     @callback
     def _on_topic(self, leaf: str, value: Any) -> None:
+        if leaf in FEEDBACK_LEAVES:
+            self.feedback[leaf] = value
+            for cb in list(self._feedback_listeners):
+                cb(leaf, value)
+            return
         # The phone app's edits pass through the robot's broker; their acks tell us
         # the stored map changed, without polling.
         if leaf != "data_feedback" or not isinstance(value, dict):

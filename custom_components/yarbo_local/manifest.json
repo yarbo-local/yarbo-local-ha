@@ -3,7 +3,7 @@
   "name": "Yarbo Local",
   "codeowners": ["@clara-mostly-human"],
   "config_flow": true,
-  "dependencies": ["dhcp"],
+  "dependencies": ["dhcp", "websocket_api"],
   "dhcp": [
     { "hostname": "yarbo*" },
     { "macaddress": "C8FE0F*" },

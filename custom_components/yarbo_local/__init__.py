@@ -26,6 +26,7 @@ from .const import (
 )
 from .coordinator import YarboCoordinator
 from .services import async_setup_services
+from .websocket_api import async_setup_websocket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ type YarboConfigEntry = ConfigEntry[YarboRuntimeData]
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once, independent of any robot being online."""
     async_setup_services(hass)
+    async_setup_websocket(hass)
     return True
 
 
