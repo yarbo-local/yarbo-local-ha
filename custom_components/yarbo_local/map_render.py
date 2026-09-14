@@ -56,6 +56,7 @@ class _Frame:
     max_y: float
     span: float
     pad: float
+    map_bottom: float
 
     @property
     def width(self) -> float:
@@ -97,7 +98,10 @@ def _frame(site: SiteMap | None, pose: tuple[float, float, float] | None) -> _Fr
     pad = max(2.0, span * 0.08)
     min_x, max_x = _widen(min(xs) - pad, max(xs) + pad)
     min_y, max_y = _widen(min(ys) - pad, max(ys) + pad)
-    return _Frame(min_x, min_y, max_x, max_y, span, pad)
+    # A footer strip below the map holds the scale bar and north arrow, so they never
+    # cover a zone or the robot.
+    footer = min(3.0, max(0.7, span / 30)) * 2.8
+    return _Frame(min_x, min_y, max_x, max_y + footer, span, pad, max_y)
 
 
 def _grid(f: _Frame) -> list[str]:
@@ -184,8 +188,9 @@ def _furniture(f: _Frame, empty: bool) -> list[str]:
     bar = _nice_scale(f.span)
     if bar > f.width * 0.4:
         bar /= 2
-    bx, by = f.min_x + f.pad * 0.5, f.max_y - f.pad * 0.45
-    nx, ny = f.max_x - f.pad * 0.6, f.min_y + f.pad * 0.9
+    footer_mid = (f.map_bottom + f.max_y) / 2
+    bx, by = f.min_x + f.pad * 0.5, footer_mid + f.font * 0.55
+    nx, ny = f.max_x - f.pad * 0.6, footer_mid + f.font * 0.2
     out = [
         f'<line x1="{_fmt(bx)}" y1="{_fmt(by)}" x2="{_fmt(bx + bar)}" y2="{_fmt(by)}" '
         f'stroke="{_INK}" stroke-width="{_fmt(f.stroke * 1.5)}"/>',
@@ -193,7 +198,7 @@ def _furniture(f: _Frame, empty: bool) -> list[str]:
         f'<path d="M {_fmt(nx)} {_fmt(ny - f.font * 1.1)} L {_fmt(nx - f.font * 0.45)} {_fmt(ny)} '
         f'L {_fmt(nx + f.font * 0.45)} {_fmt(ny)} Z" fill="{_INK}" stroke="{_TEXT}" '
         f'stroke-width="{_fmt(f.stroke)}"/>',
-        _label(nx, ny + f.font * 0.95, "N", f.font * 0.8),
+        _label(nx - f.font * 1.1, ny - f.font * 0.35, "N", f.font * 0.8),
     ]
     if empty:
         out.append(
