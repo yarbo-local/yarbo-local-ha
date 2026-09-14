@@ -9,7 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.typing import ConfigType
 
 from yarbo_local import Registry, RobotNotFoundError, YarboError, YarboRobot, resolve
 
@@ -24,10 +25,19 @@ from .const import (
     READY_TIMEOUT,
 )
 from .coordinator import YarboCoordinator
+from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.DEVICE_TRACKER, Platform.SENSOR]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.DEVICE_TRACKER,
+    Platform.IMAGE,
+    Platform.SENSOR,
+]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 @dataclass
@@ -40,6 +50,12 @@ class YarboRuntimeData:
 
 
 type YarboConfigEntry = ConfigEntry[YarboRuntimeData]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the actions once, independent of any robot being online."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> bool:
@@ -82,6 +98,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
 
     coordinator = YarboCoordinator(hass, entry, robot)
     coordinator.async_set_updated_data(state)
+    try:
+        await coordinator.async_refresh_map()
+    except YarboError as err:
+        _LOGGER.warning(
+            "Map not loaded for %s; it loads on the next refresh: %s", robot.serial, err
+        )
 
     mac = entry.data.get(CONF_MAC)
     device = dr.async_get(hass).async_get_or_create(

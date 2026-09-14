@@ -15,6 +15,7 @@ from custom_components.yarbo_local.const import CONF_SERIAL, DOMAIN
 from yarbo_local import FakeTransport, Registry, Simulator, YarboRobot
 
 FIXTURE = Path(__file__).parent / "fixtures" / "get_device_msg-asleep.jsonl"
+MAP_FIXTURE = Path(__file__).parent / "fixtures" / "get_map-area-pathway.jsonl"
 
 type RobotFactory = Callable[[str, int, str | None, Registry | None], YarboRobot]
 
@@ -32,7 +33,7 @@ def _fast_backoff() -> Generator[None]:
 
 @pytest.fixture
 def sim() -> Simulator:
-    return Simulator.from_fixture(FIXTURE)
+    return Simulator.from_fixture(FIXTURE, map_fixture=MAP_FIXTURE)
 
 
 @pytest.fixture

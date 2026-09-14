@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from yarbo_local import YarboError, YarboRobot
+from yarbo_local import YarboError
 
 from . import YarboConfigEntry
 from .const import DOMAIN
@@ -23,16 +23,16 @@ PARALLEL_UPDATES = 1
 
 @dataclass(frozen=True, kw_only=True)
 class YarboButtonDescription(ButtonEntityDescription):
-    press_fn: Callable[[YarboRobot], Awaitable[object]]
+    press_fn: Callable[[YarboCoordinator], Awaitable[object]]
 
 
 BUTTONS: tuple[YarboButtonDescription, ...] = (
-    YarboButtonDescription(key="wake", translation_key="wake", press_fn=lambda r: r.wake()),
+    YarboButtonDescription(key="wake", translation_key="wake", press_fn=lambda c: c.robot.wake()),
     YarboButtonDescription(
         key="refresh",
         translation_key="refresh",
         entity_category=EntityCategory.DIAGNOSTIC,
-        press_fn=lambda r: r.snapshot(),
+        press_fn=lambda c: c.async_refresh_all(),
     ),
 )
 
@@ -55,7 +55,7 @@ class YarboButton(YarboEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         try:
-            await self.entity_description.press_fn(self.coordinator.robot)
+            await self.entity_description.press_fn(self.coordinator)
         except YarboError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,

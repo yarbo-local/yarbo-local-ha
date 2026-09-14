@@ -11,7 +11,14 @@ Status: **pre-alpha, read-only.** It connects, shows the robot's state, and can 
 | Sensor | Battery, Activity (sleeping, idle, working, returning, charging, error, ...), Head, Ambient temperature, Firmware; diagnostics: Error code, Battery health, RTK status, Network path (HaLow, Wi-Fi, LTE); disabled by default: Satellites, Heading, Position X/Y, HaLow signal, Battery current, Battery voltage, Body firmware |
 | Binary sensor | Awake, Charging, Problem, RTK fix, Person detection, Follow mode; diagnostics: Online, Child lock |
 | Device tracker | Location from the robot's own GNSS fix, with fix quality, satellites and HDOP as attributes |
-| Button | Wake, Refresh |
+| Button | Wake, Refresh (state and map) |
+| Image | Map: areas, pathways, no-go zones, dock and the robot's position and heading, drawn from the robot's own map |
+
+The map redraws when the robot moves half a metre or turns, and when the map on the robot changes. Edits made in the Yarbo app pass through the robot's broker, so Home Assistant sees the save acknowledgement and re-reads the map a couple of seconds later, without polling.
+
+### Actions
+
+- **`yarbo_local.get_map`** returns the map stored on the robot: a summary of names and sizes, and GeoJSON in WGS84 for use on a map card or in a template. The robot stores zones as metres from a reference point, with x pointing west and y north; the integration converts them.
 
 State comes from the robot's 1 Hz telemetry while it is awake and from its heartbeat while it sleeps. Entities only write to Home Assistant when their own value changes, so the recorder is not flooded.
 

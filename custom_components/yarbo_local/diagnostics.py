@@ -68,5 +68,6 @@ async def async_get_config_entry_diagnostics(
             "last_heartbeat_at": state.last_heartbeat_at,
         },
         "raw": dict(state.raw),
+        "map": coordinator.site_map.summary() if coordinator.site_map is not None else None,
     }
     return async_redact_data(data, TO_REDACT)

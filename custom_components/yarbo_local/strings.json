@@ -92,10 +92,18 @@
           "unknown": "Unknown"
         }
       },
-      "ambient_temperature": { "name": "Ambient temperature" },
-      "error_code": { "name": "Error code" },
-      "battery_health": { "name": "Battery health" },
-      "rtk_status": { "name": "RTK status" },
+      "ambient_temperature": {
+        "name": "Ambient temperature"
+      },
+      "error_code": {
+        "name": "Error code"
+      },
+      "battery_health": {
+        "name": "Battery health"
+      },
+      "rtk_status": {
+        "name": "RTK status"
+      },
       "network_path": {
         "name": "Network path",
         "state": {
@@ -104,35 +112,97 @@
           "lte": "LTE"
         }
       },
-      "firmware": { "name": "Firmware" },
-      "satellites": { "name": "Satellites" },
-      "heading": { "name": "Heading" },
-      "position_x": { "name": "Position X" },
-      "position_y": { "name": "Position Y" },
-      "halow_rssi": { "name": "HaLow signal" },
-      "battery_current": { "name": "Battery current" },
-      "battery_voltage": { "name": "Battery voltage" },
-      "body_firmware": { "name": "Body firmware" }
+      "firmware": {
+        "name": "Firmware"
+      },
+      "satellites": {
+        "name": "Satellites"
+      },
+      "heading": {
+        "name": "Heading"
+      },
+      "position_x": {
+        "name": "Position X"
+      },
+      "position_y": {
+        "name": "Position Y"
+      },
+      "halow_rssi": {
+        "name": "HaLow signal"
+      },
+      "battery_current": {
+        "name": "Battery current"
+      },
+      "battery_voltage": {
+        "name": "Battery voltage"
+      },
+      "body_firmware": {
+        "name": "Body firmware"
+      }
     },
     "binary_sensor": {
-      "awake": { "name": "Awake" },
-      "online": { "name": "Online" },
-      "rtk_fix": { "name": "RTK fix" },
-      "person_detection": { "name": "Person detection" },
-      "follow_mode": { "name": "Follow mode" },
-      "child_lock": { "name": "Child lock" }
+      "awake": {
+        "name": "Awake"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "rtk_fix": {
+        "name": "RTK fix"
+      },
+      "person_detection": {
+        "name": "Person detection"
+      },
+      "follow_mode": {
+        "name": "Follow mode"
+      },
+      "child_lock": {
+        "name": "Child lock"
+      }
     },
     "button": {
-      "wake": { "name": "Wake" },
-      "refresh": { "name": "Refresh" }
+      "wake": {
+        "name": "Wake"
+      },
+      "refresh": {
+        "name": "Refresh"
+      }
     },
     "device_tracker": {
-      "location": { "name": "Location" }
+      "location": {
+        "name": "Location"
+      }
+    },
+    "image": {
+      "map": {
+        "name": "Map"
+      }
     }
   },
   "exceptions": {
     "command_failed": {
       "message": "The robot did not accept {command}: {error}"
+    },
+    "entry_not_found": {
+      "message": "No Yarbo Local entry with id {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "{title} is not loaded. Check that the robot is reachable."
+    },
+    "map_unavailable": {
+      "message": "The robot did not return its map: {error}"
+    }
+  },
+  "services": {
+    "get_map": {
+      "name": "Get map",
+      "description": "Reads the map stored on the robot and returns its areas, pathways, no-go zones and dock as GeoJSON, with a summary of names and sizes.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Robot",
+          "description": "The Yarbo whose map to read."
+        }
+      }
     }
   }
 }
