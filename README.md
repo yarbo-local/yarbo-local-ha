@@ -22,6 +22,12 @@ The map redraws when the robot moves half a metre or turns, and when the map on 
 
 State comes from the robot's 1 Hz telemetry while it is awake and from its heartbeat while it sleeps. Entities only write to Home Assistant when their own value changes, so the recorder is not flooded.
 
+## Dashboard
+
+The map belongs on a dashboard, through the companion card [yarbo-local-card](https://github.com/yarbo-local/yarbo-local-card): the robot's own map with zones, dock, live position, trail and an optional aerial photo. Install it from HACS as a Dashboard repository. `dashboards/yarbo-local.yaml` in this repository is a ready-made dashboard with the card and the robot's main entities; replace `SERIAL` with your robot's serial.
+
+The Map image entity is a fallback for places a custom card cannot go, such as picture cards and notifications.
+
 ## Requirements
 
 - Home Assistant 2026.7 or newer.

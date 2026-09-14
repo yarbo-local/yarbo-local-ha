@@ -1,0 +1,50 @@
+# Example dashboard for Yarbo Local. Needs the yarbo-local-card resource.
+# Replace SERIAL with your robot's serial in lower case, as it appears in entity ids.
+# Settings > Dashboards > Add dashboard > New dashboard from scratch, then open it,
+# edit, three-dot menu > Raw configuration editor, and paste this.
+views:
+  - title: Yarbo
+    path: yarbo
+    icon: mdi:robot-mower-outline
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: custom:yarbo-local-card
+            entity: device_tracker.yarbo_SERIAL_location
+            title: Yard
+            height: 560
+            grid_options:
+              columns: full
+      - type: grid
+        cards:
+          - type: heading
+            heading: Robot
+          - type: tile
+            entity: sensor.yarbo_SERIAL_activity
+          - type: tile
+            entity: sensor.yarbo_SERIAL_battery
+          - type: tile
+            entity: binary_sensor.yarbo_SERIAL_charging
+          - type: tile
+            entity: binary_sensor.yarbo_SERIAL_rtk_fix
+          - type: tile
+            entity: binary_sensor.yarbo_SERIAL_online
+          - type: tile
+            entity: sensor.yarbo_SERIAL_head
+          - type: tile
+            entity: button.yarbo_SERIAL_wake
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.yarbo_SERIAL_wake
+          - type: tile
+            entity: button.yarbo_SERIAL_refresh
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.yarbo_SERIAL_refresh
