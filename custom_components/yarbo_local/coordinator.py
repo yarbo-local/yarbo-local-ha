@@ -79,6 +79,9 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.feedback: dict[str, Any] = {}
         self.obstacles = ObstacleTracker.from_dict(obstacle_data)
         self._obstacle_store = obstacle_store
+        if obstacle_store is not None and ObstacleTracker.needs_migration(obstacle_data):
+            # Earlier builds logged ultrasonic readings, which were grass; rewrite without them.
+            obstacle_store.async_delay_save(self.obstacles.to_dict, 1.0)
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
         self._obstacle_listeners: list[ObstacleListener] = []
@@ -112,21 +115,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     @callback
     def _on_state(self, state: RobotState) -> None:
         self._expire_feedback(state)
-        t = state.last_frame_at or time.time()
-        run = self.obstacles.current
-        detections = self.obstacles.on_state(state, t)
-        if detections or (run is not None and self.obstacles.current is None):
-            for d in detections:
-                self._notify_obstacle(
-                    d.source,
-                    {
-                        "sensor": d.source.removeprefix("ultrasonic_"),
-                        "distance_m": round(d.distance_m, 2),
-                        "x": round(d.point[0], 2),
-                        "y": round(d.point[1], 2),
-                        "estimated": True,
-                    },
-                )
+        if self.obstacles.on_state(state, state.last_frame_at or time.time()):
             self._obstacles_changed()
         self.async_set_updated_data(state)
 

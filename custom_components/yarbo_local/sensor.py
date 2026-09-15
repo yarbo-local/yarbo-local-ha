@@ -239,8 +239,6 @@ class YarboObstacleCountSensor(YarboEntity, SensorEntity):
             "run_id": run.id,
             "plan": run.plan_name,
             "active": run.active,
-            "ultrasonic": len(run.detections),
-            "barriers": len(run.barriers),
         }
 
     def _slice(self) -> Any:

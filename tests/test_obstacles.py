@@ -34,12 +34,13 @@ def replay(coordinator: Any) -> None:
             coordinator._on_topic(leaf, rec["payload"])
 
 
-async def test_west_lawn_avoidance_is_logged(
+async def test_grass_next_to_the_strip_is_not_logged(
     hass: HomeAssistant,
     loaded_entry: MockConfigEntry,
     hass_ws_client: WebSocketGenerator,
     sim: Simulator,
 ) -> None:
+    """The West Lawn window has many close ultrasonic readings and no real obstacles."""
     sim.plans = [{"id": 2, "name": "west lawn plan", "areaIds": [9]}]
     coordinator = loaded_entry.runtime_data.coordinator
     fired: list[str] = []
@@ -52,19 +53,10 @@ async def test_west_lawn_avoidance_is_logged(
     assert run is not None
     assert run.plan_id == 2
     assert run.plan_name == "west lawn plan"
-    assert len(run.detections) >= 3
-    assert len(fired) == len(run.detections)
-
-    event = hass.states.get(EVENT)
-    assert event is not None
-    assert event.attributes["event_type"].startswith("ultrasonic_")
-    assert event.attributes["estimated"] is True
-    assert event.attributes["run_id"] == run.id
-
-    count = hass.states.get(COUNT)
-    assert count is not None
-    assert int(count.state) == run.obstacle_count
-    assert count.attributes["ultrasonic"] == len(run.detections)
+    assert run.obstacle_count == 0
+    assert fired == []
+    assert hass.states.get(EVENT).state == "unknown"
+    assert hass.states.get(COUNT).state == "0"
 
     client = await hass_ws_client(hass)
     await client.send_json_auto_id(
@@ -72,29 +64,61 @@ async def test_west_lawn_avoidance_is_logged(
     )
     result = (await client.receive_json())["result"]
     assert result["runs"][0]["id"] == run.id
-    assert len(result["run"]["detections"]) == len(run.detections)
+    assert result["run"]["barriers"] == []
 
-    response = await hass.services.async_call(
-        DOMAIN,
-        "get_obstacles",
-        {"config_entry_id": loaded_entry.entry_id},
-        blocking=True,
-        return_response=True,
-    )
-    assert response["run"]["id"] == run.id
-    assert response["geojson"]["type"] == "FeatureCollection"
-    assert len(response["geojson"]["features"]) == run.obstacle_count
+
+async def test_stored_ultrasonic_detections_are_removed_on_setup(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_create_robot: Any,
+    mock_resolve: Any,
+    hass_storage: dict[str, Any],
+    sim: Simulator,
+) -> None:
+    hass_storage[f"{DOMAIN}.obstacles.{sim.serial}"] = {
+        "version": 1,
+        "key": f"{DOMAIN}.obstacles.{sim.serial}",
+        "data": {
+            "runs": [
+                {
+                    "id": "2-1",
+                    "plan_id": 2,
+                    "area_ids": [9],
+                    "started": 1.0,
+                    "ended": 2.0,
+                    "detections": [
+                        {"t": 1, "source": "ultrasonic_right", "point": [1, 2], "robot": [0, 0, 0]}
+                    ],
+                    "barriers": [{"points": [[1, 2]], "first_seen": 1, "last_seen": 1}],
+                }
+            ]
+        },
+    }
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = config_entry.runtime_data.coordinator
+    assert coordinator.obstacles.latest.obstacle_count == 1
+    assert await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+    saved = hass_storage[f"{DOMAIN}.obstacles.{sim.serial}"]["data"]
+    assert "detections" not in saved["runs"][0]
+    assert len(saved["runs"][0]["barriers"]) == 1
 
 
 async def test_obstacle_log_survives_a_reload(
     hass: HomeAssistant, loaded_entry: MockConfigEntry
 ) -> None:
     coordinator = loaded_entry.runtime_data.coordinator
+    sample = json.loads(SAMPLE.read_text())
     replay(coordinator)
+    coordinator._on_topic("plan_feedback", sample["plan_feedback"])
+    for message in sample["cloud_points_feedback"]:
+        coordinator._on_topic("cloud_points_feedback", message)
     await asyncio.sleep(0.05)
     await hass.async_block_till_done()
     logged = coordinator.obstacles.to_dict()
-    assert logged["runs"]
+    assert logged["runs"][-1]["barriers"]
 
     assert await hass.config_entries.async_reload(loaded_entry.entry_id)
     await hass.async_block_till_done()
@@ -139,3 +163,25 @@ async def test_barriers_and_live_stream(
         coordinator._on_topic("recharge_feedback", {"path": [{"x": 0, "y": 0}, {"x": 1, "y": 1}]})
         coordinator._on_state(coordinator.data)
         assert "recharge_feedback" not in coordinator.feedback
+
+
+async def test_get_obstacles_action_returns_reported_obstacles(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    sample = json.loads(SAMPLE.read_text())
+    coordinator = loaded_entry.runtime_data.coordinator
+    coordinator._on_topic("plan_feedback", sample["plan_feedback"])
+    for message in sample["cloud_points_feedback"]:
+        coordinator._on_topic("cloud_points_feedback", message)
+    await asyncio.sleep(0.05)
+    response = await hass.services.async_call(
+        DOMAIN,
+        "get_obstacles",
+        {"config_entry_id": loaded_entry.entry_id},
+        blocking=True,
+        return_response=True,
+    )
+    run = coordinator.obstacles.latest
+    assert response["run"]["id"] == run.id
+    assert len(response["run"]["barriers"]) == run.obstacle_count > 0
+    assert len(response["geojson"]["features"]) == run.obstacle_count

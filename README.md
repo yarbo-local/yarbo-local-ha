@@ -18,12 +18,9 @@ The map redraws when the robot moves half a metre or turns, and when the map on 
 
 ### Obstacle log
 
-Every obstacle the robot meets during a plan run is logged and kept across restarts, for the last 30 runs:
+Obstacles the robot reports during a plan run are logged and kept across restarts, for the last 30 runs. The **Obstacle** event entity fires once per new obstacle, so they appear in the logbook and history and can trigger automations. **Obstacles this run** counts them. The card draws them, and `yarbo_local.get_obstacles` returns any run's log as map metres and GeoJSON.
 
-- **Ultrasonic detections.** Each time a front ultrasonic sensor sees something approach, one obstacle is logged at the closest reading, placed on the map from the robot's position and the sensor's direction. The position is an estimate. Repeat passes at the same spot count as one obstacle.
-- **Obstacles on the robot's own map**, the clusters it reports while planning around things.
-
-The **Obstacle** event entity fires once per new obstacle, so obstacles appear in the logbook and history and can trigger automations. **Obstacles this run** counts them. The card draws them, and `yarbo_local.get_obstacles` returns any run's log as map metres and GeoJSON.
+Only the robot's own obstacle reports are used. The front ultrasonic distances are not: their close readings come from uncut grass beside the strip being mowed, not from objects.
 
 ### Actions
 

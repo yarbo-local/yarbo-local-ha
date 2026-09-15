@@ -1,4 +1,4 @@
-"""Obstacle events: one per newly detected obstacle, so they land in the logbook and history."""
+"""Obstacle events: one per obstacle the robot reports, so they land in the logbook and history."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .entity import YarboEntity
 
 PARALLEL_UPDATES = 0
 
-EVENT_TYPES = ["ultrasonic_left", "ultrasonic_middle", "ultrasonic_right", "barrier"]
+EVENT_TYPES = ["barrier"]
 
 
 async def async_setup_entry(

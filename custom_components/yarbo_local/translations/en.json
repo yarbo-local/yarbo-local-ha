@@ -187,10 +187,7 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "ultrasonic_left": "Front-left ultrasonic",
-              "ultrasonic_middle": "Middle ultrasonic",
-              "ultrasonic_right": "Front-right ultrasonic",
-              "barrier": "Obstacle on the robot's map"
+              "barrier": "Obstacle reported by the robot"
             }
           }
         }
@@ -227,7 +224,7 @@
     },
     "get_obstacles": {
       "name": "Get obstacles",
-      "description": "Returns the obstacles logged during a plan run: ultrasonic detections with estimated positions and obstacle clusters from the robot, in map metres and as GeoJSON. Without a run id, the current or most recent run.",
+      "description": "Returns the obstacles the robot reported during a plan run, in map metres and as GeoJSON. Without a run id, the current or most recent run.",
       "fields": {
         "config_entry_id": {
           "name": "Robot",

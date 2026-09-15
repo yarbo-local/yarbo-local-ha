@@ -99,16 +99,6 @@ def _obstacles_geojson(run: dict[str, Any], ref: tuple[float, float]) -> dict[st
         return [round(lon, 8), round(lat, 8)]
 
     features: list[dict[str, Any]] = []
-    for d in run["detections"]:
-        features.append(
-            {
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": lonlat(*d["point"])},
-                "properties": {
-                    k: d[k] for k in ("source", "distance_m", "t", "count", "estimated")
-                },
-            }
-        )
     for b in run["barriers"]:
         coords = [lonlat(x, y) for x, y in b["points"]]
         geometry = (
