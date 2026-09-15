@@ -38,8 +38,8 @@ MAP_EDIT_COMMANDS = frozenset(
 # Formats come from the steves2j reverse engineering; not yet seen on our robot.
 FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback", "cloud_points_feedback"})
 # cloud_points_feedback carries tmp_barrier_points: clusters of {x, y} in the map frame.
-# The robot clears the list within seconds, so obstacles are collected for the whole
-# plan run and kept until the next run starts.
+# The robot's list changes during a run and can be empty for long stretches, so obstacles
+# are collected for the whole plan run and kept until the next run starts.
 OBSTACLE_MERGE_M = 0.35
 MAX_OBSTACLE_CLUSTERS = 400
 # The app saves an area twice within a second; wait for the burst to settle.
