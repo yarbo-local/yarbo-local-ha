@@ -115,7 +115,7 @@ class YarboConfigFlow(ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(probe.serial)
                     self._abort_if_unique_id_configured(updates={CONF_HOST: host, CONF_PORT: port})
                     return self.async_create_entry(
-                        title=f"Yarbo {probe.serial}",
+                        title="Yarbo",
                         data={
                             CONF_HOST: host,
                             CONF_PORT: port,
@@ -151,9 +151,7 @@ class YarboConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         if user_input is not None:
-            return self.async_create_entry(
-                title=f"Yarbo {self._discovered[CONF_SERIAL]}", data=self._discovered
-            )
+            return self.async_create_entry(title="Yarbo", data=self._discovered)
         self._set_confirm_only()
         return self.async_show_form(
             step_id="discovery_confirm",

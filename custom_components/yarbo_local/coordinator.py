@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 import logging
+import math
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -36,6 +37,11 @@ MAP_EDIT_COMMANDS = frozenset(
 # Feedback topics the card draws: plan progress, return route, detected obstacles.
 # Formats come from the steves2j reverse engineering; not yet seen on our robot.
 FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback", "cloud_points_feedback"})
+# cloud_points_feedback carries tmp_barrier_points: clusters of {x, y} in the map frame.
+# The robot clears the list within seconds, so obstacles are collected for the whole
+# plan run and kept until the next run starts.
+OBSTACLE_MERGE_M = 0.35
+MAX_OBSTACLE_CLUSTERS = 400
 # The app saves an area twice within a second; wait for the burst to settle.
 MAP_REFRESH_DELAY = 2.0
 
@@ -59,6 +65,8 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
         self.feedback: dict[str, Any] = {}
+        self.obstacles: list[list[tuple[float, float]]] = []
+        self._obstacle_run: Any = None
         self._map_refresh: asyncio.TimerHandle | None = None
         entry.async_on_unload(robot.on_state(self._on_state))
         entry.async_on_unload(robot.session.add_connection_listener(self._on_connection))
@@ -71,7 +79,25 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     @callback
     def _on_state(self, state: RobotState) -> None:
+        self._expire_feedback(state)
         self.async_set_updated_data(state)
+
+    @callback
+    def _expire_feedback(self, state: RobotState) -> None:
+        """Drop feedback that no longer describes the robot, so a card never replays it."""
+        if "recharge_feedback" in self.feedback and state.recharging_code == 0:
+            self._set_feedback("recharge_feedback", None)
+        if "plan_feedback" in self.feedback and state.planning_code == 0:
+            self._set_feedback("plan_feedback", None)
+
+    @callback
+    def _set_feedback(self, leaf: str, value: Any) -> None:
+        if value is None:
+            self.feedback.pop(leaf, None)
+        else:
+            self.feedback[leaf] = value
+        for cb in list(self._feedback_listeners):
+            cb(leaf, value)
 
     @callback
     def _on_connection(self, connected: bool) -> None:
@@ -108,10 +134,19 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     @callback
     def _on_topic(self, leaf: str, value: Any) -> None:
+        if leaf == "cloud_points_feedback":
+            if self._collect_obstacles(value):
+                self._set_feedback("obstacles", self.obstacles)
+            return
         if leaf in FEEDBACK_LEAVES:
-            self.feedback[leaf] = value
-            for cb in list(self._feedback_listeners):
-                cb(leaf, value)
+            if leaf == "plan_feedback" and isinstance(value, dict):
+                run = (value.get("planId"), value.get("startTime"))
+                if run != self._obstacle_run:
+                    self._obstacle_run = run
+                    if self.obstacles:
+                        self.obstacles = []
+                        self._set_feedback("obstacles", self.obstacles)
+            self._set_feedback(leaf, value)
             return
         # The phone app's edits pass through the robot's broker; their acks tell us
         # the stored map changed, without polling.
@@ -143,6 +178,34 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         except YarboError as err:
             _LOGGER.debug("Map refresh after an app edit failed: %s", err)
 
+    def _collect_obstacles(self, value: Any) -> bool:
+        """Merge new barrier clusters; True when the collection changed."""
+        clusters = value.get("tmp_barrier_points") if isinstance(value, dict) else None
+        if not isinstance(clusters, list):
+            return False
+        changed = False
+        centres = [_centre(c) for c in self.obstacles]
+        for raw in clusters:
+            items = raw if isinstance(raw, list) else [raw]
+            points = [
+                (round(float(p["x"]), 3), round(float(p["y"]), 3))
+                for p in items
+                if isinstance(p, dict)
+                and isinstance(p.get("x"), int | float)
+                and isinstance(p.get("y"), int | float)
+            ]
+            if not points:
+                continue
+            centre = _centre(points)
+            if any(math.dist(centre, c) < OBSTACLE_MERGE_M for c in centres):
+                continue
+            self.obstacles.append(points)
+            centres.append(centre)
+            changed = True
+        if len(self.obstacles) > MAX_OBSTACLE_CLUSTERS:
+            self.obstacles = self.obstacles[-MAX_OBSTACLE_CLUSTERS:]
+        return changed
+
     # -- keep awake
 
     def start_keep_awake(self) -> None:
@@ -159,3 +222,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
                 await self.robot.session.send("set_working_state")
             except YarboError as err:
                 _LOGGER.debug("Keep-awake renewal failed: %s", err)
+
+
+def _centre(points: list[tuple[float, float]]) -> tuple[float, float]:
+    return (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))

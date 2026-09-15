@@ -39,7 +39,7 @@ async def test_user_flow(
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == f"Yarbo {sim.serial}"
+    assert result["title"] == "Yarbo"
     assert result["data"] == {
         CONF_HOST: "yarbo.localdomain",
         CONF_PORT: 1883,

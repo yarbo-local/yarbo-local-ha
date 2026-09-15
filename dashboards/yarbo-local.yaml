@@ -24,18 +24,26 @@ views:
             heading: Robot
           - type: tile
             entity: sensor.yarbo_SERIAL_activity
+            name: Activity
           - type: tile
             entity: sensor.yarbo_SERIAL_battery
+            name: Battery
           - type: tile
             entity: binary_sensor.yarbo_SERIAL_charging
+            name: Charging
           - type: tile
             entity: binary_sensor.yarbo_SERIAL_rtk_fix
+            name: RTK fix
           - type: tile
             entity: binary_sensor.yarbo_SERIAL_online
+            name: Connection
           - type: tile
             entity: sensor.yarbo_SERIAL_head
+            name: Head
           - type: tile
             entity: button.yarbo_SERIAL_wake
+            name: Wake
+            hide_state: true
             tap_action:
               action: perform-action
               perform_action: button.press
@@ -43,6 +51,8 @@ views:
                 entity_id: button.yarbo_SERIAL_wake
           - type: tile
             entity: button.yarbo_SERIAL_refresh
+            name: Refresh
+            hide_state: true
             tap_action:
               action: perform-action
               perform_action: button.press
