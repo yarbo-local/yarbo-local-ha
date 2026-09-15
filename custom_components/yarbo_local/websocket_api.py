@@ -115,6 +115,19 @@ def map_payload(entry: ConfigEntry, coordinator: YarboCoordinator) -> dict[str, 
     }
 
 
+def fault_payload(coordinator: YarboCoordinator) -> dict[str, Any] | None:
+    fault = coordinator.data.fault
+    if fault is None:
+        return None
+    return {
+        "code": fault.code,
+        "key": fault.key,
+        "description": fault.description,
+        "hint": fault.hint,
+        "since": coordinator.fault_since,
+    }
+
+
 def live_payload(coordinator: YarboCoordinator) -> dict[str, Any]:
     state = coordinator.data
     pos = state.position
@@ -133,6 +146,8 @@ def live_payload(coordinator: YarboCoordinator) -> dict[str, Any]:
         "battery": state.battery,
         "charging": state.charging,
         "error_code": state.error_code,
+        "fault": fault_payload(coordinator),
+        "pause_reason": state.pause_reason,
         "head": state.head_name,
         "plan_running": state.plan_running,
         "x": round(pos[0], 3) if pos else None,

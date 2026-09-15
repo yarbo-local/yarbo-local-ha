@@ -77,6 +77,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.serial: str = robot.serial or ""
         self.site_map: SiteMap | None = None
         self.feedback: dict[str, Any] = {}
+        self.fault_started: tuple[int, float] | None = None
         self.obstacles = ObstacleTracker.from_dict(obstacle_data)
         self._obstacle_store = obstacle_store
         if obstacle_store is not None and ObstacleTracker.needs_migration(obstacle_data):
@@ -114,6 +115,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     @callback
     def _on_state(self, state: RobotState) -> None:
+        self._track_fault(state)
         self._expire_feedback(state)
         if self.obstacles.on_state(state, state.last_frame_at or time.time()):
             self._obstacles_changed()
@@ -161,6 +163,18 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
             self._schedule_map_refresh()
 
     # -- feedback
+
+    @property
+    def fault_since(self) -> float | None:
+        return self.fault_started[1] if self.fault_started else None
+
+    @callback
+    def _track_fault(self, state: RobotState) -> None:
+        code = state.error_code
+        if code == 0:
+            self.fault_started = None
+        elif self.fault_started is None or self.fault_started[0] != code:
+            self.fault_started = (code, state.last_frame_at or time.time())
 
     @callback
     def _expire_feedback(self, state: RobotState) -> None:

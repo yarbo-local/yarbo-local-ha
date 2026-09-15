@@ -27,7 +27,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from yarbo_local import Activity, RobotState
-from yarbo_local.models import HEAD_TYPES
+from yarbo_local.models import FAULTS, HEAD_TYPES, PAUSE_REASONS
 
 from . import YarboConfigEntry
 from .coordinator import YarboCoordinator
@@ -39,6 +39,24 @@ PARALLEL_UPDATES = 0
 @dataclass(frozen=True, kw_only=True)
 class YarboSensorDescription(SensorEntityDescription):
     value_fn: Callable[[RobotState], StateType]
+    attrs_fn: Callable[[RobotState], dict[str, Any]] | None = None
+
+
+FAULT_OPTIONS = ["none", *(key for key, _, _ in FAULTS.values()), "unidentified"]
+
+
+def _fault_state(state: RobotState) -> str:
+    fault = state.fault
+    if fault is None:
+        return "none"
+    return fault.key or "unidentified"
+
+
+def _fault_attrs(state: RobotState) -> dict[str, Any]:
+    fault = state.fault
+    if fault is None:
+        return {}
+    return {"code": fault.code, "description": fault.description, "hint": fault.hint}
 
 
 def _position(index: int) -> Callable[[RobotState], StateType]:
@@ -63,6 +81,21 @@ SENSORS: tuple[YarboSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[a.value for a in Activity],
         value_fn=lambda s: s.activity.value,
+    ),
+    YarboSensorDescription(
+        key="fault",
+        translation_key="fault",
+        device_class=SensorDeviceClass.ENUM,
+        options=FAULT_OPTIONS,
+        value_fn=_fault_state,
+        attrs_fn=_fault_attrs,
+    ),
+    YarboSensorDescription(
+        key="pause_reason",
+        translation_key="pause_reason",
+        device_class=SensorDeviceClass.ENUM,
+        options=["not_paused", *PAUSE_REASONS.values(), "unknown"],
+        value_fn=lambda s: s.pause_reason or "not_paused",
     ),
     YarboSensorDescription(
         key="head_type",
@@ -212,8 +245,13 @@ class YarboSensor(YarboEntity, SensorEntity):
     def native_value(self) -> StateType:
         return self.entity_description.value_fn(self.robot_state)
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        attrs_fn = self.entity_description.attrs_fn
+        return attrs_fn(self.robot_state) if attrs_fn else None
+
     def _slice(self) -> Any:
-        return self.native_value
+        return (self.native_value, self.extra_state_attributes)
 
 
 class YarboObstacleCountSensor(YarboEntity, SensorEntity):

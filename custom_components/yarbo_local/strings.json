@@ -76,7 +76,40 @@
           "paused": "Paused",
           "returning": "Returning to dock",
           "charging": "Charging",
-          "error": "Error"
+          "error": "Fault"
+        }
+      },
+      "fault": {
+        "name": "Fault",
+        "state": {
+          "none": "None",
+          "tilted": "Tilted or flipped over",
+          "unidentified": "Unidentified fault"
+        },
+        "state_attributes": {
+          "code": {
+            "name": "Code"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "hint": {
+            "name": "What to do"
+          }
+        }
+      },
+      "pause_reason": {
+        "name": "Pause reason",
+        "state": {
+          "not_paused": "Not paused",
+          "manual": "Paused by you",
+          "low_battery_recharging": "Low battery, recharging",
+          "power_restart": "Power restart",
+          "emergency_stop": "Emergency stop",
+          "bumper": "Bumper pressed",
+          "stuck": "Stuck",
+          "fault": "Fault",
+          "unknown": "Unrecognised reason"
         }
       },
       "head_type": {

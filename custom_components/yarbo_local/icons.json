@@ -59,6 +59,19 @@
       },
       "obstacles_this_run": {
         "default": "mdi:map-marker-alert-outline"
+      },
+      "fault": {
+        "default": "mdi:alert-circle",
+        "state": {
+          "none": "mdi:check-circle-outline",
+          "tilted": "mdi:rotate-left-variant"
+        }
+      },
+      "pause_reason": {
+        "default": "mdi:pause-circle-outline",
+        "state": {
+          "not_paused": "mdi:play-circle-outline"
+        }
       }
     },
     "binary_sensor": {
