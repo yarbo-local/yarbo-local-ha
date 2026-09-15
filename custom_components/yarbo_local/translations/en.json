@@ -138,6 +138,9 @@
       },
       "body_firmware": {
         "name": "Body firmware"
+      },
+      "obstacles_this_run": {
+        "name": "Obstacles this run"
       }
     },
     "binary_sensor": {
@@ -177,6 +180,21 @@
       "map": {
         "name": "Map"
       }
+    },
+    "event": {
+      "obstacle": {
+        "name": "Obstacle",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "ultrasonic_left": "Front-left ultrasonic",
+              "ultrasonic_middle": "Middle ultrasonic",
+              "ultrasonic_right": "Front-right ultrasonic",
+              "barrier": "Obstacle on the robot's map"
+            }
+          }
+        }
+      }
     }
   },
   "exceptions": {
@@ -191,6 +209,9 @@
     },
     "map_unavailable": {
       "message": "The robot did not return its map: {error}"
+    },
+    "run_not_found": {
+      "message": "No logged plan run with id {run_id}."
     }
   },
   "services": {
@@ -201,6 +222,20 @@
         "config_entry_id": {
           "name": "Robot",
           "description": "The Yarbo whose map to read."
+        }
+      }
+    },
+    "get_obstacles": {
+      "name": "Get obstacles",
+      "description": "Returns the obstacles logged during a plan run: ultrasonic detections with estimated positions and obstacle clusters from the robot, in map metres and as GeoJSON. Without a run id, the current or most recent run.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Robot",
+          "description": "The Yarbo whose obstacle log to read."
+        },
+        "run_id": {
+          "name": "Run",
+          "description": "A run id from an earlier response. Leave empty for the current or most recent run."
         }
       }
     }

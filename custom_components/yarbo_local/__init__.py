@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from yarbo_local import Registry, RobotNotFoundError, YarboError, YarboRobot, resolve
@@ -34,6 +36,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.DEVICE_TRACKER,
+    Platform.EVENT,
     Platform.IMAGE,
     Platform.SENSOR,
 ]
@@ -98,7 +101,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         _LOGGER.info("Robot %s moved from %s to %s", robot.serial, configured_host, host)
         hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_HOST: host})
 
-    coordinator = YarboCoordinator(hass, entry, robot)
+    store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.obstacles.{robot.serial}")
+    coordinator = YarboCoordinator(
+        hass, entry, robot, obstacle_store=store, obstacle_data=await store.async_load()
+    )
     coordinator.async_set_updated_data(state)
     try:
         await coordinator.async_refresh_map()
@@ -131,5 +137,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> bo
     """Disconnect from the robot."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        await entry.runtime_data.coordinator.async_save_obstacles()
         await entry.runtime_data.robot.close()
     return unload_ok

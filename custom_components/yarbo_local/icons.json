@@ -56,6 +56,9 @@
       },
       "body_firmware": {
         "default": "mdi:chip"
+      },
+      "obstacles_this_run": {
+        "default": "mdi:map-marker-alert-outline"
       }
     },
     "binary_sensor": {
@@ -90,11 +93,19 @@
       "map": {
         "default": "mdi:map"
       }
+    },
+    "event": {
+      "obstacle": {
+        "default": "mdi:alert-octagon-outline"
+      }
     }
   },
   "services": {
     "get_map": {
       "service": "mdi:map-search"
+    },
+    "get_obstacles": {
+      "service": "mdi:map-marker-alert"
     }
   }
 }

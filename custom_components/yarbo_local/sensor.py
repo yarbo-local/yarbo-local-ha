@@ -196,7 +196,9 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data.coordinator
-    async_add_entities(YarboSensor(coordinator, description) for description in SENSORS)
+    entities: list[SensorEntity] = [YarboSensor(coordinator, d) for d in SENSORS]
+    entities.append(YarboObstacleCountSensor(coordinator))
+    async_add_entities(entities)
 
 
 class YarboSensor(YarboEntity, SensorEntity):
@@ -212,3 +214,35 @@ class YarboSensor(YarboEntity, SensorEntity):
 
     def _slice(self) -> Any:
         return self.native_value
+
+
+class YarboObstacleCountSensor(YarboEntity, SensorEntity):
+    """Obstacles logged in the current plan run, or the last one between runs."""
+
+    _attr_translation_key = "obstacles_this_run"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: YarboCoordinator) -> None:
+        super().__init__(coordinator, "obstacles_this_run")
+
+    @property
+    def native_value(self) -> int | None:
+        run = self.coordinator.obstacles.latest
+        return run.obstacle_count if run is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        run = self.coordinator.obstacles.latest
+        if run is None:
+            return {}
+        return {
+            "run_id": run.id,
+            "plan": run.plan_name,
+            "active": run.active,
+            "ultrasonic": len(run.detections),
+            "barriers": len(run.barriers),
+        }
+
+    def _slice(self) -> Any:
+        run = self.coordinator.obstacles.latest
+        return (self.native_value, run.plan_name if run else None, run.active if run else None)

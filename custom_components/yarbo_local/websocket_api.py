@@ -44,6 +44,7 @@ TARGET: dict[str | vol.Marker, Any] = {
 def async_setup_websocket(hass: HomeAssistant) -> None:
     for command in (
         ws_map,
+        ws_obstacles,
         ws_subscribe_live,
         ws_background_get,
         ws_background_save,
@@ -162,6 +163,25 @@ async def ws_map(hass: HomeAssistant, connection: ActiveConnection, msg: dict[st
     connection.send_result(msg["id"], map_payload(entry, coordinator))
 
 
+@websocket_command(
+    {vol.Required("type"): "yarbo_local/obstacles", **TARGET, vol.Optional("run_id"): str}
+)
+@callback
+def ws_obstacles(hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any]) -> None:
+    entry = _entry(hass, msg)
+    if entry is None:
+        _not_found(connection, msg)
+        return
+    coordinator: YarboCoordinator = entry.runtime_data.coordinator
+    connection.send_result(
+        msg["id"],
+        {
+            "runs": [run.summary() for run in reversed(coordinator.obstacles.runs)],
+            "run": coordinator.obstacle_run_payload(msg.get("run_id")),
+        },
+    )
+
+
 @websocket_command({vol.Required("type"): "yarbo_local/subscribe_live", **TARGET})
 @callback
 def ws_subscribe_live(
@@ -222,6 +242,8 @@ def ws_subscribe_live(
     send_live()
     for leaf, value in coordinator.feedback.items():
         on_feedback(leaf, value)
+    if coordinator.obstacles.latest is not None:
+        on_feedback("obstacles", coordinator.obstacle_run_payload())
 
 
 # -- aerial background ----------------------------------------------------------

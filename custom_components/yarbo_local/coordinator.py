@@ -1,18 +1,27 @@
-"""Push coordinator fed by the library's state listener, plus the site map."""
+"""Push coordinator fed by the library: robot state, site map, feedback and the obstacle log."""
 
 from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
 import logging
-import math
+import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from yarbo_local import ConnectionLostError, RobotState, SiteMap, YarboError, YarboRobot
+from yarbo_local import (
+    ConnectionLostError,
+    ObstacleTracker,
+    RobotState,
+    SiteMap,
+    YarboError,
+    YarboRobot,
+)
+from yarbo_local.models import parse_plans
 
 from .const import DOMAIN, KEEP_AWAKE_INTERVAL
 
@@ -34,22 +43,27 @@ MAP_EDIT_COMMANDS = frozenset(
     {f"{verb}_{obj}" for verb in ("save", "del", "del_list", "del_all") for obj in _MAP_OBJECTS}
     | {"map_recovery", "erase_map", "correct_map"}
 )
-# Feedback topics the card draws: plan progress, return route, detected obstacles.
-# Formats come from the steves2j reverse engineering; not yet seen on our robot.
-FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback", "cloud_points_feedback"})
-# cloud_points_feedback carries tmp_barrier_points: clusters of {x, y} in the map frame.
-# The robot's list changes during a run and can be empty for long stretches, so obstacles
-# are collected for the whole plan run and kept until the next run starts.
-OBSTACLE_MERGE_M = 0.35
-MAX_OBSTACLE_CLUSTERS = 400
+# Feedback the card draws directly: plan progress and the return-to-dock route.
+FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback"})
 # The app saves an area twice within a second; wait for the burst to settle.
 MAP_REFRESH_DELAY = 2.0
+OBSTACLE_SAVE_DELAY = 10.0
+
+type ObstacleListener = Callable[[str, dict[str, Any]], None]
 
 
 class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     """One robot. Data is the latest ``RobotState``; there is no polling."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, robot: YarboRobot) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        robot: YarboRobot,
+        *,
+        obstacle_store: Store[dict[str, Any]] | None = None,
+        obstacle_data: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -62,11 +76,12 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.robot = robot
         self.serial: str = robot.serial or ""
         self.site_map: SiteMap | None = None
+        self.feedback: dict[str, Any] = {}
+        self.obstacles = ObstacleTracker.from_dict(obstacle_data)
+        self._obstacle_store = obstacle_store
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
-        self.feedback: dict[str, Any] = {}
-        self.obstacles: list[list[tuple[float, float]]] = []
-        self._obstacle_run: Any = None
+        self._obstacle_listeners: list[ObstacleListener] = []
         self._map_refresh: asyncio.TimerHandle | None = None
         entry.async_on_unload(robot.on_state(self._on_state))
         entry.async_on_unload(robot.session.add_connection_listener(self._on_connection))
@@ -77,10 +92,86 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     def connected(self) -> bool:
         return self.robot.session.connected
 
+    # -- listeners
+
+    def add_map_listener(self, cb: Callable[[], None]) -> Callable[[], None]:
+        self._map_listeners.append(cb)
+        return lambda: self._map_listeners.remove(cb)
+
+    def add_feedback_listener(self, cb: Callable[[str, Any], None]) -> Callable[[], None]:
+        self._feedback_listeners.append(cb)
+        return lambda: self._feedback_listeners.remove(cb)
+
+    def add_obstacle_listener(self, cb: ObstacleListener) -> Callable[[], None]:
+        """Called with ``(kind, attributes)`` for every new obstacle."""
+        self._obstacle_listeners.append(cb)
+        return lambda: self._obstacle_listeners.remove(cb)
+
+    # -- inbound
+
     @callback
     def _on_state(self, state: RobotState) -> None:
         self._expire_feedback(state)
+        t = state.last_frame_at or time.time()
+        run = self.obstacles.current
+        detections = self.obstacles.on_state(state, t)
+        if detections or (run is not None and self.obstacles.current is None):
+            for d in detections:
+                self._notify_obstacle(
+                    d.source,
+                    {
+                        "sensor": d.source.removeprefix("ultrasonic_"),
+                        "distance_m": round(d.distance_m, 2),
+                        "x": round(d.point[0], 2),
+                        "y": round(d.point[1], 2),
+                        "estimated": True,
+                    },
+                )
+            self._obstacles_changed()
         self.async_set_updated_data(state)
+
+    @callback
+    def _on_connection(self, connected: bool) -> None:
+        if self.entry.state is not ConfigEntryState.LOADED:
+            return  # our own close during unload is not an outage
+        if connected:
+            self.async_set_updated_data(self.robot.state)
+        else:
+            self.async_set_update_error(ConnectionLostError("connection to the robot lost"))
+
+    @callback
+    def _on_topic(self, leaf: str, value: Any) -> None:
+        t = time.time()
+        if leaf == "cloud_points_feedback":
+            added = self.obstacles.on_barriers(value, t)
+            for barrier in added:
+                cx, cy = barrier.centre
+                self._notify_obstacle(
+                    "barrier", {"points": len(barrier.points), "x": round(cx, 2), "y": round(cy, 2)}
+                )
+            if added:
+                self._obstacles_changed()
+                self.async_update_listeners()
+            return
+        if leaf in FEEDBACK_LEAVES:
+            if leaf == "plan_feedback" and self.obstacles.on_plan_feedback(value, t):
+                self._obstacles_changed()
+                run = self.obstacles.current
+                if run is not None and run.plan_name is None:
+                    self.entry.async_create_background_task(
+                        self.hass, self._name_run(run.id), name=f"{DOMAIN}_plan_name"
+                    )
+                self.async_update_listeners()
+            self._set_feedback(leaf, value)
+            return
+        # The phone app's edits pass through the robot's broker; their acks tell us
+        # the stored map changed, without polling.
+        if leaf != "data_feedback" or not isinstance(value, dict):
+            return
+        if value.get("topic") in MAP_EDIT_COMMANDS and value.get("state") == 0:
+            self._schedule_map_refresh()
+
+    # -- feedback
 
     @callback
     def _expire_feedback(self, state: RobotState) -> None:
@@ -99,24 +190,50 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         for cb in list(self._feedback_listeners):
             cb(leaf, value)
 
+    # -- obstacles
+
+    def obstacle_run_payload(self, run_id: str | None = None) -> dict[str, Any] | None:
+        run = self.obstacles.get(run_id) if run_id else self.obstacles.latest
+        return run.to_dict() if run is not None else None
+
     @callback
-    def _on_connection(self, connected: bool) -> None:
-        if self.entry.state is not ConfigEntryState.LOADED:
-            return  # our own close during unload is not an outage
-        if connected:
-            self.async_set_updated_data(self.robot.state)
-        else:
-            self.async_set_update_error(ConnectionLostError("connection to the robot lost"))
+    def _notify_obstacle(self, kind: str, attributes: dict[str, Any]) -> None:
+        run = self.obstacles.latest
+        attrs = {**attributes, "run_id": run.id if run else None}
+        if run is not None and run.plan_name:
+            attrs["plan"] = run.plan_name
+        for cb in list(self._obstacle_listeners):
+            cb(kind, attrs)
+
+    @callback
+    def _obstacles_changed(self) -> None:
+        payload = self.obstacle_run_payload()
+        for cb in list(self._feedback_listeners):
+            cb("obstacles", payload)
+        if self._obstacle_store is not None:
+            self._obstacle_store.async_delay_save(self.obstacles.to_dict, OBSTACLE_SAVE_DELAY)
+
+    async def _name_run(self, run_id: str) -> None:
+        try:
+            fb = await self.robot.session.request("read_all_plan", timeout=10.0)
+        except YarboError as err:
+            _LOGGER.debug("Could not read plan names: %s", err)
+            return
+        run = self.obstacles.get(run_id)
+        if run is None:
+            return
+        for plan in parse_plans(fb.payload):
+            if plan.id == run.plan_id:
+                run.plan_name = plan.name
+                self._obstacles_changed()
+                self.async_update_listeners()
+                return
+
+    async def async_save_obstacles(self) -> None:
+        if self._obstacle_store is not None:
+            await self._obstacle_store.async_save(self.obstacles.to_dict())
 
     # -- map
-
-    def add_feedback_listener(self, cb: Callable[[str, Any], None]) -> Callable[[], None]:
-        self._feedback_listeners.append(cb)
-        return lambda: self._feedback_listeners.remove(cb)
-
-    def add_map_listener(self, cb: Callable[[], None]) -> Callable[[], None]:
-        self._map_listeners.append(cb)
-        return lambda: self._map_listeners.remove(cb)
 
     async def async_refresh_map(self) -> SiteMap:
         """Read the map from the robot; notify listeners when it changed."""
@@ -131,29 +248,6 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     async def async_refresh_all(self) -> None:
         await self.robot.snapshot()
         await self.async_refresh_map()
-
-    @callback
-    def _on_topic(self, leaf: str, value: Any) -> None:
-        if leaf == "cloud_points_feedback":
-            if self._collect_obstacles(value):
-                self._set_feedback("obstacles", self.obstacles)
-            return
-        if leaf in FEEDBACK_LEAVES:
-            if leaf == "plan_feedback" and isinstance(value, dict):
-                run = (value.get("planId"), value.get("startTime"))
-                if run != self._obstacle_run:
-                    self._obstacle_run = run
-                    if self.obstacles:
-                        self.obstacles = []
-                        self._set_feedback("obstacles", self.obstacles)
-            self._set_feedback(leaf, value)
-            return
-        # The phone app's edits pass through the robot's broker; their acks tell us
-        # the stored map changed, without polling.
-        if leaf != "data_feedback" or not isinstance(value, dict):
-            return
-        if value.get("topic") in MAP_EDIT_COMMANDS and value.get("state") == 0:
-            self._schedule_map_refresh()
 
     def _schedule_map_refresh(self) -> None:
         self._cancel_map_refresh()
@@ -178,34 +272,6 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         except YarboError as err:
             _LOGGER.debug("Map refresh after an app edit failed: %s", err)
 
-    def _collect_obstacles(self, value: Any) -> bool:
-        """Merge new barrier clusters; True when the collection changed."""
-        clusters = value.get("tmp_barrier_points") if isinstance(value, dict) else None
-        if not isinstance(clusters, list):
-            return False
-        changed = False
-        centres = [_centre(c) for c in self.obstacles]
-        for raw in clusters:
-            items = raw if isinstance(raw, list) else [raw]
-            points = [
-                (round(float(p["x"]), 3), round(float(p["y"]), 3))
-                for p in items
-                if isinstance(p, dict)
-                and isinstance(p.get("x"), int | float)
-                and isinstance(p.get("y"), int | float)
-            ]
-            if not points:
-                continue
-            centre = _centre(points)
-            if any(math.dist(centre, c) < OBSTACLE_MERGE_M for c in centres):
-                continue
-            self.obstacles.append(points)
-            centres.append(centre)
-            changed = True
-        if len(self.obstacles) > MAX_OBSTACLE_CLUSTERS:
-            self.obstacles = self.obstacles[-MAX_OBSTACLE_CLUSTERS:]
-        return changed
-
     # -- keep awake
 
     def start_keep_awake(self) -> None:
@@ -222,7 +288,3 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
                 await self.robot.session.send("set_working_state")
             except YarboError as err:
                 _LOGGER.debug("Keep-awake renewal failed: %s", err)
-
-
-def _centre(points: list[tuple[float, float]]) -> tuple[float, float]:
-    return (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))

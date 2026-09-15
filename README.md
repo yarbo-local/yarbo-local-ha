@@ -16,6 +16,15 @@ Status: **pre-alpha, read-only.** It connects, shows the robot's state, and can 
 
 The map redraws when the robot moves half a metre or turns, and when the map on the robot changes. Edits made in the Yarbo app pass through the robot's broker, so Home Assistant sees the save acknowledgement and re-reads the map a couple of seconds later, without polling.
 
+### Obstacle log
+
+Every obstacle the robot meets during a plan run is logged and kept across restarts, for the last 30 runs:
+
+- **Ultrasonic detections.** Each time a front ultrasonic sensor sees something approach, one obstacle is logged at the closest reading, placed on the map from the robot's position and the sensor's direction. The position is an estimate. Repeat passes at the same spot count as one obstacle.
+- **Obstacles on the robot's own map**, the clusters it reports while planning around things.
+
+The **Obstacle** event entity fires once per new obstacle, so obstacles appear in the logbook and history and can trigger automations. **Obstacles this run** counts them. The card draws them, and `yarbo_local.get_obstacles` returns any run's log as map metres and GeoJSON.
+
 ### Actions
 
 - **`yarbo_local.get_map`** returns the map stored on the robot: a summary of names and sizes, and GeoJSON in WGS84 for use on a map card or in a template. The robot stores zones as metres from a reference point, with x pointing west and y north; the integration converts them.

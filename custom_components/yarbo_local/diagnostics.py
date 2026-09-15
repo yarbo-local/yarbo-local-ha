@@ -69,5 +69,6 @@ async def async_get_config_entry_diagnostics(
         },
         "raw": dict(state.raw),
         "map": coordinator.site_map.summary() if coordinator.site_map is not None else None,
+        "obstacle_runs": [run.summary() for run in coordinator.obstacles.runs],
     }
     return async_redact_data(data, TO_REDACT)

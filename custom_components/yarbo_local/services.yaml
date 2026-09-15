@@ -5,3 +5,15 @@ get_map:
       selector:
         config_entry:
           integration: yarbo_local
+
+get_obstacles:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: yarbo_local
+    run_id:
+      required: false
+      selector:
+        text:
