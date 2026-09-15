@@ -41,6 +41,9 @@ views:
             entity: sensor.yarbo_SERIAL_head
             name: Head
           - type: tile
+            entity: sensor.yarbo_SERIAL_obstacles_this_run
+            name: Obstacles this run
+          - type: tile
             entity: button.yarbo_SERIAL_wake
             name: Wake
             hide_state: true
