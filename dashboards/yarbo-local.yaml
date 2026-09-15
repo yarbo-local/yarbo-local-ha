@@ -26,6 +26,13 @@ views:
             entity: sensor.yarbo_SERIAL_activity
             name: Activity
           - type: tile
+            entity: sensor.yarbo_SERIAL_fault
+            name: Fault
+            visibility:  # only while the robot reports one
+              - condition: state
+                entity: sensor.yarbo_SERIAL_fault
+                state_not: none
+          - type: tile
             entity: sensor.yarbo_SERIAL_battery
             name: Battery
           - type: tile
