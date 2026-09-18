@@ -52,4 +52,4 @@ jobs:
         run: uv run mypy
       - name: Tests
         working-directory: yarbo-local-ha
-        run: uv run pytest -q
+        run: uv run pytest -q --cov=custom_components.yarbo_local --cov-fail-under=95

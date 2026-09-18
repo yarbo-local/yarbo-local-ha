@@ -100,6 +100,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self._map_refresh: asyncio.TimerHandle | None = None
         self._unreachable: CALLBACK_TYPE | None = None
         self._plan_error_code = 0
+        self._logged_unavailable = False
         # The last minutes of traffic, for diagnostics. In memory only, redacted on the way out.
         self.recorder = FlightRecorder()
         entry.async_on_unload(self.recorder.attach(robot.session))
@@ -158,6 +159,13 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         if self.entry.state is not ConfigEntryState.LOADED:
             return  # our own close during unload is not an outage
         self.recorder.note(time.time(), "connected" if connected else "connection lost")
+        # Once when it goes and once when it is back, however often the link flaps in between.
+        if connected and self._logged_unavailable:
+            _LOGGER.info("%s is reachable again", self.entry.title)
+            self._logged_unavailable = False
+        elif not connected and not self._logged_unavailable:
+            _LOGGER.info("%s is unreachable; reconnecting in the background", self.entry.title)
+            self._logged_unavailable = True
         if connected:
             self._cancel_unreachable()
             repairs.async_clear(self.hass, self.serial, repairs.UNREACHABLE)

@@ -1,0 +1,85 @@
+# Home Assistant integration quality scale, audited 2026-09-18 against
+# https://developers.home-assistant.io/docs/core/integration-quality-scale/checklist
+# A custom integration cannot hold a tier officially; this is the same checklist, held honestly.
+# Standing: every Silver rule is done or exempt. Two Bronze rules are not, both about publishing.
+rules:
+  # Bronze
+  action-setup: done  # services.py, registered in async_setup so automations validate offline
+  appropriate-polling:
+    status: exempt
+    comment: Local push. The robot publishes; nothing is polled.
+  brands:
+    status: todo
+    comment: >-
+      An icon of our own ships in brand/ (Yarbo's logo is not ours to use). Submission to the
+      home-assistant/brands repository is planned with the HACS default submission.
+  common-modules: done  # coordinator.py, entity.py
+  config-flow-test-coverage: done  # config_flow.py is at 100 percent
+  config-flow: done
+  dependency-transparency:
+    status: todo
+    comment: >-
+      The library is public, MIT, and built and tested by CI at github.com/yarbo-local/yarbo-local,
+      but it is not on PyPI yet, so the pinned requirement cannot be installed by Home Assistant
+      on a fresh system. Needs a PyPI project and a release workflow.
+  docs-actions: done  # README, "What you get" and the controls paragraph
+  docs-triggers:
+    status: exempt
+    comment: No device triggers; the Plan and Obstacle event entities are documented instead.
+  docs-conditions:
+    status: exempt
+    comment: No conditions are provided.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  entity-event-setup: done  # listeners are added in async_added_to_hass and removed with async_on_remove
+  entity-unique-id: done  # <serial>_<key>
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done  # the flow listens for the robot, then probes it by serial
+  test-before-setup: done  # ConfigEntryNotReady when the robot does not answer
+  unique-config-entry: done  # the serial is the unique id; a second address for it updates the entry
+
+  # Silver
+  action-exceptions: done  # every failure is a translated ServiceValidationError or HomeAssistantError
+  config-entry-unloading: done
+  docs-configuration-parameters: done  # name, subnet to scan, keep awake
+  docs-installation-parameters: done  # address, port, name
+  entity-unavailable: done  # entities follow the broker connection through the coordinator
+  integration-owner: done
+  log-when-unavailable: done  # once going, once coming back, however often the link flaps
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: The robot's broker is anonymous. There is nothing to authenticate with.
+  test-coverage: done  # 99 percent overall, no module under 95
+
+  # Gold, for the record; not claimed
+  devices: done
+  diagnostics: done  # with a redacted flight recorder of recent traffic
+  discovery-update-info: done  # DHCP updates the address of a known serial
+  discovery: done
+  docs-data-update: done
+  docs-examples: done  # two blueprints
+  docs-known-limitations: todo
+  docs-supported-devices: todo  # one robot, one firmware, one head have been seen
+  docs-supported-functions: done
+  docs-troubleshooting: todo
+  docs-use-cases: todo
+  dynamic-devices: todo  # heads and the base station as devices: Phase 5
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices: todo  # with dynamic-devices
+
+  # Platinum
+  async-dependency: done
+  inject-websession:
+    status: exempt
+    comment: MQTT, not HTTP.
+  strict-typing: done  # mypy strict on both repositories

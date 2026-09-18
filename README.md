@@ -117,6 +117,10 @@ Options (on the integration's entry):
 - **Subnet to scan.** A CIDR such as `192.168.50.0/24`. When the robot stops answering at its last address, the subnet is scanned for a broker carrying this robot's serial. This is how the integration follows DHCP changes across VLANs, where Home Assistant's own DHCP discovery cannot see the lease.
 - **Keep the robot awake.** Re-sends the wake command every two and a half minutes so telemetry streams continuously. Off by default; the robot sleeps about five minutes after a wake otherwise.
 
+## Remove
+
+Settings, Devices and services, Yarbo Local, the three dots on the robot's entry, Delete. That disconnects from the robot and removes its device and entities. Nothing was ever written to the robot, so there is nothing to undo there, and the Yarbo app is unaffected. Home Assistant keeps two small files per robot under `.storage` (`yarbo_local.obstacles.<serial>` and `yarbo_local.plans.<serial>`) and one for the card's aerial photo settings; delete them if you want no trace. Then remove the integration itself in HACS, or delete `custom_components/yarbo_local`, and restart.
+
 ## What it will never do
 
 Send commands that are not in the library's verified allowlist. The list of commands that will never be registered, such as remote shell, map erase and factory calibration, is in the library's `protocol/commands.yaml`.
