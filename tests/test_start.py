@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
+from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant, State
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
@@ -209,3 +210,30 @@ async def test_two_plans_of_one_name_are_told_apart(
     state = hass.states.get(entity_id(hass, "select", sim.serial, "plan"))
     assert state is not None
     assert state.attributes["options"] == ["lawn (3)", "lawn (7)"]
+
+
+async def test_a_start_the_robot_cannot_route_is_told_in_words(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_create_robot: Any,
+    mock_resolve: Any,
+    sim: Simulator,
+) -> None:
+    ready(sim)
+    await setup(hass, config_entry)
+    coordinator = config_entry.runtime_data.coordinator
+    coordinator.runs.plan_names[9] = "ghost plan"  # known here, gone on the robot: it cannot route
+    with (
+        patch("yarbo_local.client.START_CONFIRM_S", 0.3),
+        pytest.raises(HomeAssistantError) as failed,
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "start_plan",
+            {"config_entry_id": config_entry.entry_id, "plan": "ghost plan"},
+            blocking=True,
+        )
+    assert failed.value.translation_key == "plan_start_failed"
+    placeholders = failed.value.translation_placeholders or {}
+    assert placeholders["reason"] == "Failed to calculate route"
+    assert "WP005" in placeholders["hint"]

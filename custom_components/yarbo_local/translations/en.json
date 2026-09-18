@@ -361,6 +361,12 @@
     },
     "plan_not_found": {
       "message": "The robot has no plan named '{plan}'. Its plans are: {plans}."
+    },
+    "plan_start_failed": {
+      "message": "The robot could not start the plan: {reason}. {hint}"
+    },
+    "plan_start_unconfirmed": {
+      "message": "The start was sent, but the robot did not begin within a few seconds and gave no reason. Check the Yarbo app."
     }
   },
   "services": {

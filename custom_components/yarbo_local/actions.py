@@ -8,6 +8,7 @@ from yarbo_local import (
     Action,
     CommandRefusedError,
     ControllerError,
+    PlanStartError,
     PreflightError,
     YarboError,
 )
@@ -29,7 +30,21 @@ async def async_act(
 ) -> None:
     """Pre-flight, then send. Every failure is a translated message, never a traceback."""
     try:
-        await coordinator.robot.act(action, plan_id=plan_id)
+        if action is Action.START and plan_id is not None:
+            await coordinator.robot.start_plan(plan_id)  # waits for the robot's verdict
+        else:
+            await coordinator.robot.act(action, plan_id=plan_id)
+    except PlanStartError as err:
+        # The robot says nothing when it cannot start; the library read the code it left.
+        problem = err.error
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="plan_start_failed" if problem else "plan_start_unconfirmed",
+            translation_placeholders={
+                "reason": problem.description if problem else "",
+                "hint": problem.hint if problem else "",
+            },
+        ) from err
     except PreflightError as err:
         # The first reason is the one to fix first; its key selects the sentence.
         raise ServiceValidationError(
