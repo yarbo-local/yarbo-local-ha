@@ -7,7 +7,7 @@ question: is it mowing, paused, coming home, at rest, or in trouble?
 A control is offered only while the command behind it is verified in the library's
 registry. Today that is starting, pausing, resuming and returning to the dock. Start
 resumes a paused plan; from rest it starts the plan chosen in the Plan picker. Stopping
-appears the day its capture is in, with no change here.
+is a button: Home Assistant's lawn mower has no stop.
 """
 
 from __future__ import annotations

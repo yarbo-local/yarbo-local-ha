@@ -174,9 +174,8 @@ async def test_controls_exist_only_for_verified_commands(
         for e in er.async_entries_for_config_entry(registry, loaded_entry.entry_id)
         if e.domain == "button"
     }
-    assert keys == {"wake", "refresh", "start", "return_to_dock", "resume", "pause"}, (
-        "stop has no capture yet, so it must not exist. It appears when commands.yaml "
-        "marks it verified."
+    assert keys == {"wake", "refresh", "start", "return_to_dock", "resume", "pause", "stop"}, (
+        "a button exists for every moving action the library has verified, and only those"
     )
 
 
@@ -320,3 +319,26 @@ async def test_pause_button_pauses_a_running_plan(
     await hass.async_block_till_done()
     assert hass.states.get(mower).state == "paused"  # type: ignore[union-attr]
     assert value(hass, "sensor", sim.serial, "pause_reason") == "manual"
+
+
+async def test_stop_button_ends_the_plan_where_it_is(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_create_robot: Any,
+    mock_resolve: Any,
+    sim: Simulator,
+) -> None:
+    with_mower(sim, on_going_planning=1, charging_status=0)
+    sim.snapshot["BatteryMSG"] = {**sim.snapshot.get("BatteryMSG", {}), "status": 1}
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    stop = entity_id(hass, "button", sim.serial, "stop")
+    await hass.services.async_call("button", "press", {"entity_id": stop}, blocking=True)
+    await asyncio.sleep(0.05)
+    await hass.async_block_till_done()
+    assert sim.log[-1] == ("stop", {})
+    assert value(hass, "sensor", sim.serial, "plan_status") == "none"
+    with pytest.raises(ServiceValidationError) as refused:
+        await hass.services.async_call("button", "press", {"entity_id": stop}, blocking=True)
+    assert refused.value.translation_key == "refused_no_plan_running"

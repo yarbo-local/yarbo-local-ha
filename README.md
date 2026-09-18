@@ -2,7 +2,7 @@
 
 A Home Assistant integration for Yarbo robots that talks to the MQTT broker running on the robot itself. No Yarbo account, no vendor servers, no telemetry. If the internet is down, this still works.
 
-Status: **pre-alpha.** It shows the robot, its map and its plan runs, and it has four controls: start a plan, pause it, resume it, and send the robot home. Every command it can send has been verified on real hardware first, with a capture in the library as evidence. Stopping a plan has not been through that yet, so it is not offered; it appears on its own the day it is. The plan and the protocol work live in the library repository, [yarbo-local](https://github.com/yarbo-local/yarbo-local).
+Status: **pre-alpha.** It shows the robot, its map and its plan runs, and it has five controls: start a plan, pause it, resume it, stop it, and send the robot home. Every command it can send has been verified on real hardware first, with a capture in the library as evidence. The plan and the protocol work live in the library repository, [yarbo-local](https://github.com/yarbo-local/yarbo-local).
 
 ## What you get
 
@@ -13,7 +13,7 @@ Status: **pre-alpha.** It shows the robot, its map and its plan runs, and it has
 | Sensor | Plan status, Plan progress, Plan time remaining, Last completed plan; Battery, Activity (sleeping, idle, working, returning, charging, error, ...), Head, Ambient temperature, Firmware; diagnostics: Error code, Battery health, RTK status, Network path (HaLow, Wi-Fi, LTE); disabled by default: Satellites, Heading, Position X/Y, HaLow signal, Battery current, Battery voltage, Body firmware |
 | Binary sensor | Awake, Charging, Problem, RTK fix, Person detection, Follow mode; diagnostics: Online, Child lock |
 | Device tracker | Location from the robot's own GNSS fix, with fix quality, satellites and HDOP as attributes |
-| Button | Start plan, Pause, Resume, Return to dock, Wake, Refresh (state, map and plans) |
+| Button | Start plan, Pause, Resume, Stop, Return to dock, Wake, Refresh (state, map and plans) |
 | Event | Plan: started, paused, resumed, finished, each with its reason. Obstacle: one per obstacle the robot reports |
 | Image | Map: areas, pathways, no-go zones, dock and the robot's position and heading, drawn from the robot's own map |
 
@@ -43,7 +43,7 @@ actions:
 
 ### Controls
 
-**Return to dock** works from any state, a fault included; on this robot it is also what clears a fault that has been sitting for a while. **Start plan** starts the plan chosen in the **Plan** selector, and the `yarbo_local.start_plan` action starts one by name for automations. When the robot cannot work out a route it says nothing at all; the Activity sensor then reads error, and the Yarbo app would show WP005. On our robot the cause was a pathway that began 31 cm from the charging point, too far for the robot to link it to the dock. **Pause** holds the running plan where it is and **Resume** continues it. All three check first and say why when they cannot work ("The robot is already on its way home"). Commands need the robot's single controller role, which the Yarbo app also wants: if a command is refused for that reason, close the app and try again. Reading never takes that role, so the app keeps working while Home Assistant only watches.
+**Return to dock** works from any state, a fault included; on this robot it is also what clears a fault that has been sitting for a while. **Start plan** starts the plan chosen in the **Plan** selector, and the `yarbo_local.start_plan` action starts one by name for automations. When the robot cannot work out a route it says nothing at all; the Activity sensor then reads error, and the Yarbo app would show WP005. On our robot the cause was a pathway that began 31 cm from the charging point, too far for the robot to link it to the dock. **Stop** ends the plan where the robot is; the robot stays there, so follow it with Return to dock if you want it home. **Pause** holds the running plan where it is and **Resume** continues it. All three check first and say why when they cannot work ("The robot is already on its way home"). Commands need the robot's single controller role, which the Yarbo app also wants: if a command is refused for that reason, close the app and try again. Reading never takes that role, so the app keeps working while Home Assistant only watches.
 
 ### Obstacle log
 
