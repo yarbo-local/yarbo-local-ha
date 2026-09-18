@@ -72,6 +72,23 @@
         "state": {
           "not_paused": "mdi:play-circle-outline"
         }
+      },
+      "plan_status": {
+        "default": "mdi:clipboard-text-outline",
+        "state": {
+          "running": "mdi:clipboard-play-outline",
+          "paused": "mdi:clipboard-clock-outline",
+          "recharging": "mdi:battery-charging"
+        }
+      },
+      "plan_progress": {
+        "default": "mdi:progress-check"
+      },
+      "plan_remaining": {
+        "default": "mdi:timer-sand"
+      },
+      "last_completed": {
+        "default": "mdi:calendar-check"
       }
     },
     "binary_sensor": {
@@ -100,6 +117,18 @@
       },
       "refresh": {
         "default": "mdi:refresh"
+      },
+      "return_to_dock": {
+        "default": "mdi:home-import-outline"
+      },
+      "resume": {
+        "default": "mdi:play"
+      },
+      "pause": {
+        "default": "mdi:pause"
+      },
+      "stop": {
+        "default": "mdi:stop"
       }
     },
     "image": {
@@ -110,6 +139,14 @@
     "event": {
       "obstacle": {
         "default": "mdi:alert-octagon-outline"
+      },
+      "plan": {
+        "default": "mdi:clipboard-play-outline"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "default": "mdi:robot-mower"
       }
     }
   },

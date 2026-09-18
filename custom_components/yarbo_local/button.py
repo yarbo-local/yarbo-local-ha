@@ -11,9 +11,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from yarbo_local import YarboError
+from yarbo_local import Action, YarboError
 
 from . import YarboConfigEntry
+from .actions import async_act
 from .const import DOMAIN
 from .coordinator import YarboCoordinator
 from .entity import YarboEntity
@@ -24,6 +25,8 @@ PARALLEL_UPDATES = 1
 @dataclass(frozen=True, kw_only=True)
 class YarboButtonDescription(ButtonEntityDescription):
     press_fn: Callable[[YarboCoordinator], Awaitable[object]]
+    # A button for a moving action exists only while its command is verified.
+    action: Action | None = None
 
 
 BUTTONS: tuple[YarboButtonDescription, ...] = (
@@ -34,6 +37,30 @@ BUTTONS: tuple[YarboButtonDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         press_fn=lambda c: c.async_refresh_all(),
     ),
+    YarboButtonDescription(
+        key="return_to_dock",
+        translation_key="return_to_dock",
+        action=Action.DOCK,
+        press_fn=lambda c: async_act(c, Action.DOCK),
+    ),
+    YarboButtonDescription(
+        key="resume",
+        translation_key="resume",
+        action=Action.RESUME,
+        press_fn=lambda c: async_act(c, Action.RESUME),
+    ),
+    YarboButtonDescription(
+        key="pause",
+        translation_key="pause",
+        action=Action.PAUSE,
+        press_fn=lambda c: async_act(c, Action.PAUSE),
+    ),
+    YarboButtonDescription(
+        key="stop",
+        translation_key="stop",
+        action=Action.STOP,
+        press_fn=lambda c: async_act(c, Action.STOP),
+    ),
 )
 
 
@@ -43,7 +70,11 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data.coordinator
-    async_add_entities(YarboButton(coordinator, description) for description in BUTTONS)
+    async_add_entities(
+        YarboButton(coordinator, description)
+        for description in BUTTONS
+        if description.action is None or coordinator.robot.can(description.action)
+    )
 
 
 class YarboButton(YarboEntity, ButtonEntity):

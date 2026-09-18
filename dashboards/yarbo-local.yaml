@@ -21,6 +21,36 @@ views:
       - type: grid
         cards:
           - type: heading
+            heading: Mower
+          - type: tile
+            entity: lawn_mower.yarbo_SERIAL
+            name: Mower
+            features:  # only the controls the integration has verified are offered
+              - type: lawn-mower-commands
+                commands:
+                  - start_pause
+                  - dock
+          - type: tile
+            entity: sensor.yarbo_SERIAL_plan_status
+            name: Plan
+          - type: tile
+            entity: sensor.yarbo_SERIAL_plan_progress
+            name: Progress
+            visibility:  # only while a run is under way, paused included
+              - condition: state
+                entity: sensor.yarbo_SERIAL_plan_status
+                state_not: none
+          - type: tile
+            entity: sensor.yarbo_SERIAL_plan_time_remaining
+            name: Time remaining
+            visibility:
+              - condition: state
+                entity: sensor.yarbo_SERIAL_plan_status
+                state: running
+          - type: tile
+            entity: sensor.yarbo_SERIAL_last_completed_plan
+            name: Last completed
+          - type: heading
             heading: Robot
           - type: tile
             entity: sensor.yarbo_SERIAL_activity

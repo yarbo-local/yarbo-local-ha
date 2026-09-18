@@ -195,6 +195,24 @@
       },
       "obstacles_this_run": {
         "name": "Obstacles this run"
+      },
+      "plan_status": {
+        "name": "Plan status",
+        "state": {
+          "none": "No plan",
+          "running": "Running",
+          "paused": "Paused",
+          "recharging": "Recharging, will resume"
+        }
+      },
+      "plan_progress": {
+        "name": "Plan progress"
+      },
+      "plan_remaining": {
+        "name": "Plan time remaining"
+      },
+      "last_completed": {
+        "name": "Last completed plan"
       }
     },
     "binary_sensor": {
@@ -223,6 +241,18 @@
       },
       "refresh": {
         "name": "Refresh"
+      },
+      "return_to_dock": {
+        "name": "Return to dock"
+      },
+      "resume": {
+        "name": "Resume"
+      },
+      "pause": {
+        "name": "Pause"
+      },
+      "stop": {
+        "name": "Stop"
       }
     },
     "device_tracker": {
@@ -245,6 +275,24 @@
             }
           }
         }
+      },
+      "plan": {
+        "name": "Plan",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "plan_started": "Plan started",
+              "plan_paused": "Plan paused",
+              "plan_resumed": "Plan resumed",
+              "plan_finished": "Plan finished"
+            }
+          }
+        }
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Mower"
       }
     }
   },
@@ -263,6 +311,45 @@
     },
     "run_not_found": {
       "message": "No logged plan run with id {run_id}."
+    },
+    "controller_unavailable": {
+      "message": "The robot did not hand over control. Close the Yarbo app on your phone, then try again."
+    },
+    "not_verified": {
+      "message": "This integration cannot {action} yet: the command has not been verified on a real robot."
+    },
+    "start_not_verified": {
+      "message": "No plan is paused, so there is nothing to resume. Starting a plan from here is not available yet; start it in the Yarbo app."
+    },
+    "refused_robot_offline": {
+      "message": "The robot is not connected."
+    },
+    "refused_already_returning": {
+      "message": "The robot is already on its way home."
+    },
+    "refused_already_docked": {
+      "message": "The robot is already on the dock, charging."
+    },
+    "refused_plan_running": {
+      "message": "A plan is already running."
+    },
+    "refused_nothing_to_resume": {
+      "message": "No plan is paused, so there is nothing to resume."
+    },
+    "refused_no_plan_running": {
+      "message": "No plan is running."
+    },
+    "refused_returning": {
+      "message": "The robot is on its way home."
+    },
+    "refused_fault_active": {
+      "message": "{detail}"
+    },
+    "refused_rtk_not_ready": {
+      "message": "The robot's RTK position fix is not good enough yet."
+    },
+    "refused_no_head": {
+      "message": "No head is attached to the robot."
     }
   },
   "services": {

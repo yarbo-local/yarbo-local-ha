@@ -38,6 +38,7 @@ PLATFORMS = [
     Platform.DEVICE_TRACKER,
     Platform.EVENT,
     Platform.IMAGE,
+    Platform.LAWN_MOWER,
     Platform.SENSOR,
 ]
 

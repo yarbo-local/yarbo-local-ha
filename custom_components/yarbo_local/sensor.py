@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -21,10 +22,12 @@ from homeassistant.const import (
     UnitOfElectricPotential,
     UnitOfLength,
     UnitOfTemperature,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import dt as dt_util
 
 from yarbo_local import Activity, RobotState
 from yarbo_local.models import FAULTS, HEAD_TYPES, PAUSE_REASONS
@@ -231,6 +234,12 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
     entities: list[SensorEntity] = [YarboSensor(coordinator, d) for d in SENSORS]
     entities.append(YarboObstacleCountSensor(coordinator))
+    entities += [
+        YarboPlanStatusSensor(coordinator),
+        YarboPlanProgressSensor(coordinator),
+        YarboPlanRemainingSensor(coordinator),
+        YarboLastCompletedSensor(coordinator),
+    ]
     async_add_entities(entities)
 
 
@@ -282,3 +291,115 @@ class YarboObstacleCountSensor(YarboEntity, SensorEntity):
     def _slice(self) -> Any:
         run = self.coordinator.obstacles.latest
         return (self.native_value, run.plan_name if run else None, run.active if run else None)
+
+
+PLAN_STATUS_OPTIONS = ["none", "running", "paused", "recharging"]
+
+
+class YarboPlanStatusSensor(YarboEntity, SensorEntity):
+    """Whether a plan run is under way, and which. A paused run is still a run."""
+
+    _attr_translation_key = "plan_status"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = PLAN_STATUS_OPTIONS
+
+    def __init__(self, coordinator: YarboCoordinator) -> None:
+        super().__init__(coordinator, "plan_status")
+
+    @property
+    def native_value(self) -> str:
+        run = self.coordinator.runs.plans.current
+        return run.phase.value if run is not None else "none"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        runs = self.coordinator.runs
+        run = runs.plans.current
+        attrs: dict[str, Any] = {"plan": runs.plan_name}
+        if run is not None:
+            attrs |= {
+                "plan_id": run.plan_id,
+                "run_id": run.run_id,
+                "pauses": run.pauses,
+                "pause_reason": run.pause_reason,
+            }
+        elif runs.plans.last_finish_reason is not None:
+            attrs["last_run_ended"] = runs.plans.last_finish_reason.value
+        return attrs
+
+    def _slice(self) -> Any:
+        return (self.native_value, self.extra_state_attributes)
+
+
+class YarboPlanProgressSensor(YarboEntity, SensorEntity):
+    """Percent of the plan's area finished. Kept while paused; gone when the run ends."""
+
+    _attr_translation_key = "plan_progress"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: YarboCoordinator) -> None:
+        super().__init__(coordinator, "plan_progress")
+
+    @property
+    def native_value(self) -> float | None:
+        run = self.coordinator.runs.plans.current
+        return run.progress if run is not None else None
+
+    def _slice(self) -> Any:
+        # Whole percents: progress creeps at 2 Hz and the recorder does not need every step.
+        value = self.native_value
+        return round(value) if value is not None else None
+
+
+class YarboPlanRemainingSensor(YarboEntity, SensorEntity):
+    """The robot's own estimate of the time left, while the plan is moving."""
+
+    _attr_translation_key = "plan_remaining"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator: YarboCoordinator) -> None:
+        super().__init__(coordinator, "plan_remaining")
+
+    @property
+    def native_value(self) -> int | None:
+        runs = self.coordinator.runs
+        feedback = runs.plan_feedback
+        if runs.plans.current is None or feedback is None or feedback.remaining_s is None:
+            return None
+        return round(feedback.remaining_s / 60)
+
+    def _slice(self) -> Any:
+        return self.native_value
+
+
+class YarboLastCompletedSensor(YarboEntity, SensorEntity):
+    """When a plan last ran to completion. What "every N days" automations compare with.
+
+    Only a completed run counts: one that was sent home early, stopped or is still paused
+    does not move this. The attributes give the time per plan.
+    """
+
+    _attr_translation_key = "last_completed"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, coordinator: YarboCoordinator) -> None:
+        super().__init__(coordinator, "last_completed")
+
+    @property
+    def native_value(self) -> datetime | None:
+        times = self.coordinator.runs.plans.last_completed.values()
+        return dt_util.utc_from_timestamp(max(times)) if times else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            name: dt_util.utc_from_timestamp(at).isoformat()
+            for name, at in self.coordinator.runs.last_completed().items()
+        }
+
+    def _slice(self) -> Any:
+        return (self.native_value, self.extra_state_attributes)
