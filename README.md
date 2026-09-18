@@ -52,7 +52,19 @@ pip install "yarbo-local @ git+https://github.com/yarbo-local/yarbo-local@main"
 
 ## Set up
 
-Settings, Devices & services, Add integration, Yarbo Local. Enter the robot's IP address or DNS name. The integration connects, learns the serial number from the robot's own heartbeat, and creates the device.
+Settings, Devices & services, Add integration, Yarbo Local. Enter the robot's IP address or DNS name. The integration listens to that address for a few seconds, learns which robot is there from its heartbeat, connects to it, and creates the device.
+
+### Names
+
+A robot is called `Yarbo_` followed by its serial number until you name it. Give it a name when you add it, or later under the integration's **Configure** button; the device and every entity's display name follow. The serial number never changes, and neither do entity ids, so automations keep working after a rename.
+
+### More than one robot
+
+Add the integration once per robot. Each robot is its own entry and device, identified by its serial number, so their entities, maps and obstacle logs stay apart. A rover and its base station answer at two addresses with the same serial, and count as one robot.
+
+If one address carries several robots, which a shared base station may do, setup lists them and asks which one; run it again for the others. When an address changes, the integration only accepts a new one where that robot's own serial is heard, so one robot's entities never end up following another robot.
+
+None of us owns two robots, so this is tested against the simulator only. If you do, `yarbo-local sitecheck` tells us in a minute what we cannot find out ourselves, without sharing a serial, an address or a position: see [multi-robot.md](https://github.com/yarbo-local/yarbo-local/blob/main/docs/multi-robot.md).
 
 If your router leases `yarbo` as a hostname on the same network as Home Assistant, the robot is discovered automatically.
 

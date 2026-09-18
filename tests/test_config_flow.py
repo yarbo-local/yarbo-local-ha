@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_PORT
@@ -18,13 +18,9 @@ from custom_components.yarbo_local.const import (
     CONF_SUBNET,
     DOMAIN,
 )
-from yarbo_local import FakeTransport, Registry, Simulator, YarboRobot
+from yarbo_local import FakeBroker, Simulator
 
-from .conftest import RobotFactory
-
-
-def _dead_robot(host: str, port: int, serial: str | None, registry: Registry | None) -> YarboRobot:
-    return YarboRobot(FakeTransport(fail_next_connects=10**6), serial=serial, registry=registry)
+from .conftest import Site
 
 
 async def test_user_flow(
@@ -39,7 +35,7 @@ async def test_user_flow(
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Yarbo"
+    assert result["title"] == f"Yarbo_{sim.serial}"
     assert result["data"] == {
         CONF_HOST: "yarbo.localdomain",
         CONF_PORT: 1883,
@@ -54,20 +50,18 @@ async def test_user_flow_errors_then_recovers(
     hass: HomeAssistant,
     mock_create_robot: MagicMock,
     mock_setup_entry: AsyncMock,
-    robot_factory: RobotFactory,
+    site: Site,
     sim: Simulator,
 ) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
 
-    mock_create_robot.side_effect = _dead_robot
-    with patch("custom_components.yarbo_local.config_flow.PROBE_TIMEOUT", 0.2):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_HOST: "192.168.50.2", CONF_PORT: 1883, CONF_SERIAL: ""}
-        )
+    site.dead.add("192.168.50.2")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_HOST: "192.168.50.2", CONF_PORT: 1883, CONF_SERIAL: ""}
+    )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
-    mock_create_robot.side_effect = robot_factory
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_HOST: "192.168.50.184", CONF_PORT: 1883, CONF_SERIAL: "OTHER"}
     )
@@ -80,6 +74,17 @@ async def test_user_flow_errors_then_recovers(
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_DNS_NAME] is None
+
+
+async def test_the_probe_is_scoped_to_the_serial(
+    hass: HomeAssistant, mock_create_robot: MagicMock, mock_setup_entry: AsyncMock, sim: Simulator
+) -> None:
+    """Setup never connects without a serial: on a shared address that would be luck."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_HOST: "192.168.50.184", CONF_PORT: 1883}
+    )
+    assert [call.args[2] for call in mock_create_robot.call_args_list] == [sim.serial]
 
 
 async def test_user_flow_duplicate_updates_host(
@@ -112,6 +117,7 @@ async def test_dhcp_flow(
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == f"Yarbo_{sim.serial}"
     assert result["data"] == {
         CONF_HOST: "192.168.50.184",
         CONF_PORT: 1883,
@@ -137,13 +143,27 @@ async def test_dhcp_updates_existing_host(
     assert config_entry.data[CONF_HOST] == "192.168.50.77"
 
 
-async def test_dhcp_not_a_robot(hass: HomeAssistant, mock_create_robot: MagicMock) -> None:
-    mock_create_robot.side_effect = _dead_robot
+async def test_dhcp_not_a_robot(
+    hass: HomeAssistant, mock_create_robot: MagicMock, site: Site
+) -> None:
+    site.dead.add("192.168.50.5")
     info = DhcpServiceInfo(ip="192.168.50.5", hostname="yarbo-printer", macaddress="001122334455")
-    with patch("custom_components.yarbo_local.config_flow.PROBE_TIMEOUT", 0.2):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_DHCP}, data=info
-        )
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_DHCP}, data=info
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "cannot_connect"
+
+
+async def test_dhcp_a_broker_with_no_robot(
+    hass: HomeAssistant, mock_create_robot: MagicMock, site: Site
+) -> None:
+    """Something called yarbo runs MQTT but carries no snowbot topics: not ours."""
+    site.brokers["192.168.50.6"] = FakeBroker()
+    info = DhcpServiceInfo(ip="192.168.50.6", hostname="yarbo-nas", macaddress="001122334456")
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_DHCP}, data=info
+    )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "cannot_connect"
 
@@ -191,3 +211,4 @@ async def test_options_flow(
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert config_entry.options == {CONF_SUBNET: "192.168.50.0/24", CONF_KEEP_AWAKE: True}
+    assert config_entry.title == "Yarbo test", "saving options without a name keeps the name"

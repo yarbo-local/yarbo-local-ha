@@ -18,3 +18,8 @@ PROBE_TIMEOUT = 15.0
 # The robot sleeps about 300 s after a wake regardless of reads (see the library's
 # Phase 0 findings). Renewing at 150 s keeps a margin.
 KEEP_AWAKE_INTERVAL = 150.0
+
+
+def default_name(serial: str) -> str:
+    """What a robot is called until its owner names it."""
+    return f"Yarbo_{serial}"

@@ -1,8 +1,9 @@
-"""Shared fixtures: a simulated robot behind the library's fake transport."""
+"""Shared fixtures: simulated robots behind in-memory brokers, addressed by host."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Generator
+from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,7 +13,8 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yarbo_local.const import CONF_SERIAL, DOMAIN
-from yarbo_local import FakeTransport, Registry, Simulator, YarboRobot
+from yarbo_local import FakeBroker, FakeTransport, Registry, Simulator, YarboRobot, discover
+from yarbo_local.transport import Transport
 
 FIXTURE = Path(__file__).parent / "fixtures" / "get_device_msg-asleep.jsonl"
 MAP_FIXTURE = Path(__file__).parent / "fixtures" / "get_map-area-pathway.jsonl"
@@ -36,27 +38,59 @@ def sim() -> Simulator:
     return Simulator.from_fixture(FIXTURE, map_fixture=MAP_FIXTURE)
 
 
-@pytest.fixture
-def transports() -> list[FakeTransport]:
-    return []
+@dataclass
+class Site:
+    """The network as the tests see it: which broker answers at which address.
+
+    Any address not listed answers as ``default``, the broker carrying ``sim``. Put a
+    broker with two robots at an address to model a shared relay; add an address to
+    ``dead`` to make it refuse connections.
+    """
+
+    default: FakeBroker
+    brokers: dict[str, FakeBroker] = field(default_factory=dict)
+    dead: set[str] = field(default_factory=set)
+    transports: list[FakeTransport] = field(default_factory=list)
+
+    def connect(self, host: str, _port: int = 1883) -> Transport:
+        if host in self.dead:
+            return FakeTransport(fail_next_connects=10**6)
+        transport = self.brokers.get(host, self.default).client()
+        self.transports.append(transport)
+        return transport
 
 
 @pytest.fixture
-def robot_factory(sim: Simulator, transports: list[FakeTransport]) -> RobotFactory:
+def site(sim: Simulator) -> Site:
+    broker = FakeBroker()
+    broker.attach(sim)
+    return Site(default=broker)
+
+
+@pytest.fixture
+def transports(site: Site) -> list[FakeTransport]:
+    return site.transports
+
+
+@pytest.fixture
+def robot_factory(site: Site) -> RobotFactory:
     def factory(host: str, port: int, serial: str | None, registry: Registry | None) -> YarboRobot:
-        transport = FakeTransport()
-        sim.attach(transport)
-        transports.append(transport)
-        return YarboRobot(transport, serial=serial, registry=registry)
+        return YarboRobot(site.connect(host, port), serial=serial, registry=registry)
 
     return factory
 
 
 @pytest.fixture
-def mock_create_robot(robot_factory: RobotFactory) -> Generator[MagicMock]:
-    with patch(
-        "custom_components.yarbo_local.client.create_robot", side_effect=robot_factory
-    ) as mock:
+def mock_create_robot(robot_factory: RobotFactory, site: Site) -> Generator[MagicMock]:
+    async def list_robots(host: str, port: int) -> discover.BrokerSample:
+        return await discover.sample(host, port, wait=0.1, connect=site.connect)
+
+    with (
+        patch(
+            "custom_components.yarbo_local.client.create_robot", side_effect=robot_factory
+        ) as mock,
+        patch("custom_components.yarbo_local.client.list_robots", side_effect=list_robots),
+    ):
         yield mock
 
 
