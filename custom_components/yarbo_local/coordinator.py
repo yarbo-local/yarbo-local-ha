@@ -1,4 +1,7 @@
-"""Push coordinator fed by the library: robot state, site map, feedback and the obstacle log."""
+"""Push coordinator fed by the library: the robot's state, its map, and what the card draws.
+
+Runs, their lifecycle and the obstacle log live in ``runs.py``; this forwards to it.
+"""
 
 from __future__ import annotations
 
@@ -21,9 +24,9 @@ from yarbo_local import (
     YarboError,
     YarboRobot,
 )
-from yarbo_local.models import parse_plans
 
 from .const import DOMAIN, KEEP_AWAKE_INTERVAL
+from .runs import ObstacleListener, RunLog
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,9 +50,6 @@ MAP_EDIT_COMMANDS = frozenset(
 FEEDBACK_LEAVES = frozenset({"plan_feedback", "recharge_feedback"})
 # The app saves an area twice within a second; wait for the burst to settle.
 MAP_REFRESH_DELAY = 2.0
-OBSTACLE_SAVE_DELAY = 10.0
-
-type ObstacleListener = Callable[[str, dict[str, Any]], None]
 
 
 class YarboCoordinator(DataUpdateCoordinator[RobotState]):
@@ -63,6 +63,8 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         *,
         obstacle_store: Store[dict[str, Any]] | None = None,
         obstacle_data: dict[str, Any] | None = None,
+        plan_store: Store[dict[str, Any]] | None = None,
+        plan_data: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -78,14 +80,19 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.site_map: SiteMap | None = None
         self.feedback: dict[str, Any] = {}
         self.fault_started: tuple[int, float] | None = None
-        self.obstacles = ObstacleTracker.from_dict(obstacle_data)
-        self._obstacle_store = obstacle_store
-        if obstacle_store is not None and ObstacleTracker.needs_migration(obstacle_data):
-            # Earlier builds logged ultrasonic readings, which were grass; rewrite without them.
-            obstacle_store.async_delay_save(self.obstacles.to_dict, 1.0)
+        self.runs = RunLog(
+            hass,
+            entry,
+            robot,
+            on_change=self.async_update_listeners,
+            on_obstacles=self._obstacles_changed,
+            obstacle_store=obstacle_store,
+            obstacle_data=obstacle_data,
+            plan_store=plan_store,
+            plan_data=plan_data,
+        )
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
-        self._obstacle_listeners: list[ObstacleListener] = []
         self._map_refresh: asyncio.TimerHandle | None = None
         entry.async_on_unload(robot.on_state(self._on_state))
         entry.async_on_unload(robot.session.add_connection_listener(self._on_connection))
@@ -107,18 +114,32 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         return lambda: self._feedback_listeners.remove(cb)
 
     def add_obstacle_listener(self, cb: ObstacleListener) -> Callable[[], None]:
-        """Called with ``(kind, attributes)`` for every new obstacle."""
-        self._obstacle_listeners.append(cb)
-        return lambda: self._obstacle_listeners.remove(cb)
+        return self.runs.add_obstacle_listener(cb)
+
+    @property
+    def obstacles(self) -> ObstacleTracker:
+        return self.runs.obstacles
+
+    def obstacle_run_payload(self, run_id: str | None = None) -> dict[str, Any] | None:
+        return self.runs.obstacle_run_payload(run_id)
+
+    async def async_save_obstacles(self) -> None:
+        await self.runs.async_save()
+
+    @callback
+    def _obstacles_changed(self) -> None:
+        """The obstacle log changed: send the card the current run's log."""
+        payload = self.runs.obstacle_run_payload()
+        for cb in list(self._feedback_listeners):
+            cb("obstacles", payload)
 
     # -- inbound
 
     @callback
     def _on_state(self, state: RobotState) -> None:
         self._track_fault(state)
+        self.runs.on_state(state)
         self._expire_feedback(state)
-        if self.obstacles.on_state(state, state.last_frame_at or time.time()):
-            self._obstacles_changed()
         self.async_set_updated_data(state)
 
     @callback
@@ -132,27 +153,12 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     @callback
     def _on_topic(self, leaf: str, value: Any) -> None:
-        t = time.time()
         if leaf == "cloud_points_feedback":
-            added = self.obstacles.on_barriers(value, t)
-            for barrier in added:
-                cx, cy = barrier.centre
-                self._notify_obstacle(
-                    "barrier", {"points": len(barrier.points), "x": round(cx, 2), "y": round(cy, 2)}
-                )
-            if added:
-                self._obstacles_changed()
-                self.async_update_listeners()
+            self.runs.on_barriers(value)
             return
         if leaf in FEEDBACK_LEAVES:
-            if leaf == "plan_feedback" and self.obstacles.on_plan_feedback(value, t):
-                self._obstacles_changed()
-                run = self.obstacles.current
-                if run is not None and run.plan_name is None:
-                    self.entry.async_create_background_task(
-                        self.hass, self._name_run(run.id), name=f"{DOMAIN}_plan_name"
-                    )
-                self.async_update_listeners()
+            if leaf == "plan_feedback":
+                self.runs.on_plan_feedback(value)
             self._set_feedback(leaf, value)
             return
         # The phone app's edits pass through the robot's broker; their acks tell us
@@ -181,7 +187,9 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         """Drop feedback that no longer describes the robot, so a card never replays it."""
         if "recharge_feedback" in self.feedback and state.recharging_code == 0:
             self._set_feedback("recharge_feedback", None)
-        if "plan_feedback" in self.feedback and state.planning_code == 0:
+        # A paused plan reports planning 0 and goes quiet, but it is still the plan on the
+        # map. Only the end of the run takes it away.
+        if "plan_feedback" in self.feedback and self.runs.plans.current is None:
             self._set_feedback("plan_feedback", None)
 
     @callback
@@ -192,49 +200,6 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
             self.feedback[leaf] = value
         for cb in list(self._feedback_listeners):
             cb(leaf, value)
-
-    # -- obstacles
-
-    def obstacle_run_payload(self, run_id: str | None = None) -> dict[str, Any] | None:
-        run = self.obstacles.get(run_id) if run_id else self.obstacles.latest
-        return run.to_dict() if run is not None else None
-
-    @callback
-    def _notify_obstacle(self, kind: str, attributes: dict[str, Any]) -> None:
-        run = self.obstacles.latest
-        attrs = {**attributes, "run_id": run.id if run else None}
-        if run is not None and run.plan_name:
-            attrs["plan"] = run.plan_name
-        for cb in list(self._obstacle_listeners):
-            cb(kind, attrs)
-
-    @callback
-    def _obstacles_changed(self) -> None:
-        payload = self.obstacle_run_payload()
-        for cb in list(self._feedback_listeners):
-            cb("obstacles", payload)
-        if self._obstacle_store is not None:
-            self._obstacle_store.async_delay_save(self.obstacles.to_dict, OBSTACLE_SAVE_DELAY)
-
-    async def _name_run(self, run_id: str) -> None:
-        try:
-            fb = await self.robot.session.request("read_all_plan", timeout=10.0)
-        except YarboError as err:
-            _LOGGER.debug("Could not read plan names: %s", err)
-            return
-        run = self.obstacles.get(run_id)
-        if run is None:
-            return
-        for plan in parse_plans(fb.payload):
-            if plan.id == run.plan_id:
-                run.plan_name = plan.name
-                self._obstacles_changed()
-                self.async_update_listeners()
-                return
-
-    async def async_save_obstacles(self) -> None:
-        if self._obstacle_store is not None:
-            await self._obstacle_store.async_save(self.obstacles.to_dict())
 
     # -- map
 

@@ -101,9 +101,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         _LOGGER.info("Robot %s moved from %s to %s", robot.serial, configured_host, host)
         hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_HOST: host})
 
-    store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.obstacles.{robot.serial}")
+    obstacles: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.obstacles.{robot.serial}")
+    plans: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.plans.{robot.serial}")
     coordinator = YarboCoordinator(
-        hass, entry, robot, obstacle_store=store, obstacle_data=await store.async_load()
+        hass,
+        entry,
+        robot,
+        obstacle_store=obstacles,
+        obstacle_data=await obstacles.async_load(),
+        plan_store=plans,
+        plan_data=await plans.async_load(),
     )
     coordinator.async_set_updated_data(state)
     try:

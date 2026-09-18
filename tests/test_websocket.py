@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
@@ -68,12 +69,15 @@ async def test_subscribe_live_streams_pose_map_and_feedback(
 
         coordinator = loaded_entry.runtime_data.coordinator
         coordinator._on_topic("plan_feedback", {"planId": 1, "cleanPathProgress": []})
-        got = [(await asyncio.wait_for(client.receive_json(), 1.0))["event"] for _ in range(3)]
-        assert {
+        wanted = {
             "type": "feedback",
             "leaf": "plan_feedback",
             "data": {"planId": 1, "cleanPathProgress": []},
-        } in got
+        }
+        got: list[dict[str, Any]] = []
+        while wanted not in got and len(got) < 10:
+            got.append((await asyncio.wait_for(client.receive_json(), 1.0))["event"])
+        assert wanted in got
         assert any(e.get("leaf") == "obstacles" for e in got)  # a plan run starts the log
 
         with patch("custom_components.yarbo_local.coordinator.MAP_REFRESH_DELAY", 0.01):
