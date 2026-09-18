@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from yarbo_local import Registry, RobotNotFoundError, YarboError, YarboRobot, resolve
 
-from . import client
+from . import client, repairs
 from .const import (
     CONF_DNS_NAME,
     CONF_KEEP_AWAKE,
@@ -115,6 +115,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         plan_data=await plans.async_load(),
     )
     coordinator.async_set_updated_data(state)
+    coordinator.track_plan_error(state)
+    repairs.async_check_firmware(
+        hass, robot.serial or "", entry.title, state.firmware, registry.verified_firmware
+    )
     try:
         await coordinator.async_refresh_map()
     except YarboError as err:
@@ -147,6 +151,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> bo
     """Disconnect from the robot."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        repairs.async_clear(hass, entry.runtime_data.coordinator.serial)
         await entry.runtime_data.coordinator.async_save_obstacles()
         await entry.runtime_data.robot.close()
     return unload_ok

@@ -408,5 +408,19 @@
         }
       }
     }
+  },
+  "issues": {
+    "unreachable": {
+      "title": "{name} has not been heard from for 15 minutes",
+      "description": "A Yarbo sends a heartbeat every few seconds even while it sleeps, so this is not a robot at rest: it has no power, or it is off the network, or its address changed to one this integration could not find. It was last at {host}.\n\nCheck that the robot and its base station have power and that the robot is on Wi-Fi. If its address changed, use Reconfigure on the integration. This notice goes away by itself when the robot is heard again."
+    },
+    "plan_cannot_start": {
+      "title": "{name} could not start a plan: {reason}",
+      "description": "The robot was asked to start a plan and could not. It gives no reason beyond a code ({code}), and it keeps that code until a start works.\n\n{hint}\n\nThis notice goes away by itself the next time a plan starts."
+    },
+    "unverified_firmware": {
+      "title": "{name} runs firmware {firmware}, which has not been checked",
+      "description": "Every command this integration sends was verified on a real robot first, so far on firmware {verified}. Yours runs {firmware}. Reading will very likely keep working; a control may not, and the robot does not always say so.\n\nIf everything works, that is worth knowing: the library's site check writes a report that is safe to share. This notice goes away when the library lists your firmware."
+    }
   }
 }

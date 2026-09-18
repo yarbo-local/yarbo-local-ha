@@ -69,6 +69,12 @@ The Map image entity is a fallback for places a custom card cannot go, such as p
 - A Yarbo on firmware 3.9 or newer (verified on 3.14.11). Older firmware speaks plain JSON instead of zlib and has not been tested.
 - Home Assistant must be able to reach the robot's IP on TCP port 1883. If the robot lives on its own VLAN, allow that one port from the Home Assistant host. The base station relays the same data and can be used as the address instead of the rover.
 
+## When something needs you
+
+Three things only a person can fix show up under Settings, Repairs, in words, and leave by themselves when they are fixed: the robot has not been heard from for fifteen minutes (a sleeping Yarbo still sends a heartbeat, so that is a robot without power or network); the robot could not start a plan and left only a code, with what to check; and the robot runs firmware on which no command has been verified yet.
+
+Download diagnostics from the integration's page to report a problem. It carries the last fifteen minutes of what the robot, the Yarbo app and Home Assistant said to each other: commands, replies, refusals and the state changes between them. It is kept in memory only, never includes a position, and the serial, addresses and Wi-Fi details are redacted.
+
 ## Blueprints
 
 Two automations to import, both under [`blueprints/automation/yarbo_local`](blueprints/automation/yarbo_local):

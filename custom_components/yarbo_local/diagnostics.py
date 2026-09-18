@@ -70,5 +70,8 @@ async def async_get_config_entry_diagnostics(
         "raw": dict(state.raw),
         "map": coordinator.site_map.summary() if coordinator.site_map is not None else None,
         "obstacle_runs": [run.summary() for run in coordinator.obstacles.runs],
+        # What the robot, the app and this integration said in the last minutes. State frames
+        # carry only the fields that tell the story, never a position; the library redacts it.
+        "recent": coordinator.recorder.dump(),
     }
     return async_redact_data(data, TO_REDACT)

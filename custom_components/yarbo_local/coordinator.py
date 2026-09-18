@@ -7,17 +7,20 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from datetime import datetime
 import logging
 import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from yarbo_local import (
     ConnectionLostError,
+    FlightRecorder,
     ObstacleTracker,
     RobotState,
     SiteMap,
@@ -25,6 +28,7 @@ from yarbo_local import (
     YarboRobot,
 )
 
+from . import repairs
 from .const import DOMAIN, KEEP_AWAKE_INTERVAL
 from .runs import ObstacleListener, RunLog
 
@@ -94,6 +98,12 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
         self._map_refresh: asyncio.TimerHandle | None = None
+        self._unreachable: CALLBACK_TYPE | None = None
+        self._plan_error_code = 0
+        # The last minutes of traffic, for diagnostics. In memory only, redacted on the way out.
+        self.recorder = FlightRecorder()
+        entry.async_on_unload(self.recorder.attach(robot.session))
+        entry.async_on_unload(self._cancel_unreachable)
         entry.async_on_unload(robot.on_state(self._on_state))
         entry.async_on_unload(robot.session.add_connection_listener(self._on_connection))
         entry.async_on_unload(robot.session.add_topic_listener(self._on_topic))
@@ -138,6 +148,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     @callback
     def _on_state(self, state: RobotState) -> None:
         self._track_fault(state)
+        self.track_plan_error(state)
         self.runs.on_state(state)
         self._expire_feedback(state)
         self.async_set_updated_data(state)
@@ -146,10 +157,44 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     def _on_connection(self, connected: bool) -> None:
         if self.entry.state is not ConfigEntryState.LOADED:
             return  # our own close during unload is not an outage
+        self.recorder.note(time.time(), "connected" if connected else "connection lost")
         if connected:
+            self._cancel_unreachable()
+            repairs.async_clear(self.hass, self.serial, repairs.UNREACHABLE)
             self.async_set_updated_data(self.robot.state)
         else:
+            if self._unreachable is None:
+                self._unreachable = async_call_later(
+                    self.hass, repairs.UNREACHABLE_AFTER, self._report_unreachable
+                )
             self.async_set_update_error(ConnectionLostError("connection to the robot lost"))
+
+    @callback
+    def _cancel_unreachable(self) -> None:
+        if self._unreachable is not None:
+            self._unreachable()
+            self._unreachable = None
+
+    @callback
+    def _report_unreachable(self, _now: datetime) -> None:
+        self._unreachable = None
+        if not self.connected:
+            repairs.async_unreachable(
+                self.hass, self.serial, self.entry.title, str(self.entry.data.get("host", ""))
+            )
+
+    @callback
+    def track_plan_error(self, state: RobotState) -> None:
+        """A start that could not work leaves only a code, and leaves it until a start works."""
+        error = state.plan_error
+        code = error.code if error else 0
+        if code == self._plan_error_code:
+            return
+        self._plan_error_code = code
+        if error is None:
+            repairs.async_clear(self.hass, self.serial, repairs.PLAN_CANNOT_START)
+        else:
+            repairs.async_plan_cannot_start(self.hass, self.serial, self.entry.title, error)
 
     @callback
     def _on_topic(self, leaf: str, value: Any) -> None:

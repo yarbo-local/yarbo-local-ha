@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from yarbo_local import (
@@ -46,6 +48,9 @@ async def async_act(
             },
         ) from err
     except PreflightError as err:
+        coordinator.recorder.note(
+            time.time(), f"{action.value} refused", keys=[r.key for r in err.refusals]
+        )
         # The first reason is the one to fix first; its key selects the sentence.
         raise ServiceValidationError(
             translation_domain=DOMAIN,
