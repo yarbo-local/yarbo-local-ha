@@ -5,8 +5,9 @@ that, so the detail lives in the Activity sensor and this entity answers the sim
 question: is it mowing, paused, coming home, at rest, or in trouble?
 
 A control is offered only while the command behind it is verified in the library's
-registry. Today that is returning to the dock and resuming a paused plan. Pausing and
-starting appear the day their captures are in, with no change here.
+registry. Today that is pausing, resuming and returning to the dock. Starting a plan from
+rest is verified in the library and waits here for a way to choose the plan; stopping
+appears the day its capture is in, with no change here.
 """
 
 from __future__ import annotations

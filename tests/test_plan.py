@@ -174,9 +174,9 @@ async def test_controls_exist_only_for_verified_commands(
         for e in er.async_entries_for_config_entry(registry, loaded_entry.entry_id)
         if e.domain == "button"
     }
-    assert keys == {"wake", "refresh", "return_to_dock", "resume"}, (
-        "pause and stop have no capture yet, so they must not exist. They appear when "
-        "commands.yaml marks them verified."
+    assert keys == {"wake", "refresh", "return_to_dock", "resume", "pause"}, (
+        "stop has no capture yet, so it must not exist. It appears when commands.yaml "
+        "marks it verified."
     )
 
 
@@ -195,7 +195,7 @@ async def test_return_to_dock_from_a_fault(
     state = hass.states.get(mower)
     assert state is not None
     assert state.state == "error"
-    assert state.attributes["supported_features"] == 1 | 4, "start (resume) and dock; no pause yet"
+    assert state.attributes["supported_features"] == 1 | 2 | 4, "start (resume), pause and dock"
 
     await hass.services.async_call("lawn_mower", "dock", {"entity_id": mower}, blocking=True)
     await hass.async_block_till_done()
@@ -297,3 +297,26 @@ def test_lifecycle_event_attributes_carry_no_empty_fields() -> None:
         "reason": "fault",
         "fault_code": 902,
     }
+
+
+async def test_pause_button_pauses_a_running_plan(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_create_robot: Any,
+    mock_resolve: Any,
+    sim: Simulator,
+) -> None:
+    with_mower(sim, on_going_planning=1, charging_status=0)
+    sim.snapshot["BatteryMSG"] = {**sim.snapshot.get("BatteryMSG", {}), "status": 1}  # off the dock
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    mower = entity_id(hass, "lawn_mower", sim.serial, "mower")
+    assert hass.states.get(mower).state == "mowing"  # type: ignore[union-attr]
+    await hass.services.async_call("lawn_mower", "pause", {"entity_id": mower}, blocking=True)
+    await hass.async_block_till_done()
+    assert sim.log[-1] == ("pause", {})
+    await asyncio.sleep(0.05)
+    await hass.async_block_till_done()
+    assert hass.states.get(mower).state == "paused"  # type: ignore[union-attr]
+    assert value(hass, "sensor", sim.serial, "pause_reason") == "manual"

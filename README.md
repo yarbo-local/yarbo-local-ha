@@ -2,13 +2,13 @@
 
 A Home Assistant integration for Yarbo robots that talks to the MQTT broker running on the robot itself. No Yarbo account, no vendor servers, no telemetry. If the internet is down, this still works.
 
-Status: **pre-alpha.** It shows the robot, its map and its plan runs, and it has two controls: send the robot home, and resume a paused plan. Every command it can send has been verified on real hardware first, with a capture in the library as evidence. Pausing, stopping and starting a plan have not been through that yet, so they are not offered; they appear on their own the day they are. The plan and the protocol work live in the library repository, [yarbo-local](https://github.com/yarbo-local/yarbo-local).
+Status: **pre-alpha.** It shows the robot, its map and its plan runs, and it has three controls: pause a running plan, resume a paused one, and send the robot home. Every command it can send has been verified on real hardware first, with a capture in the library as evidence. Stopping a plan has not been through that yet, so it is not offered; it appears on its own the day it is. Starting a plan is verified in the library and waits for a plan picker here. The plan and the protocol work live in the library repository, [yarbo-local](https://github.com/yarbo-local/yarbo-local).
 
 ## What you get
 
 | Platform | Entities |
 |---|---|
-| Lawn mower | The robot while a mower head is attached: mowing, paused, returning, docked or error. Dock, and start to resume a paused plan. |
+| Lawn mower | The robot while a mower head is attached: mowing, paused, returning, docked or error. Pause, dock, and start to resume a paused plan. |
 | Sensor | Plan status, Plan progress, Plan time remaining, Last completed plan; Battery, Activity (sleeping, idle, working, returning, charging, error, ...), Head, Ambient temperature, Firmware; diagnostics: Error code, Battery health, RTK status, Network path (HaLow, Wi-Fi, LTE); disabled by default: Satellites, Heading, Position X/Y, HaLow signal, Battery current, Battery voltage, Body firmware |
 | Binary sensor | Awake, Charging, Problem, RTK fix, Person detection, Follow mode; diagnostics: Online, Child lock |
 | Device tracker | Location from the robot's own GNSS fix, with fix quality, satellites and HDOP as attributes |
@@ -42,7 +42,7 @@ actions:
 
 ### Controls
 
-**Return to dock** works from any state, a fault included; on this robot it is also what clears a fault that has been sitting for a while. **Resume** continues a paused plan. Both check first and say why when they cannot work ("The robot is already on its way home"). Commands need the robot's single controller role, which the Yarbo app also wants: if a command is refused for that reason, close the app and try again. Reading never takes that role, so the app keeps working while Home Assistant only watches.
+**Return to dock** works from any state, a fault included; on this robot it is also what clears a fault that has been sitting for a while. **Pause** holds the running plan where it is and **Resume** continues it. All three check first and say why when they cannot work ("The robot is already on its way home"). Commands need the robot's single controller role, which the Yarbo app also wants: if a command is refused for that reason, close the app and try again. Reading never takes that role, so the app keeps working while Home Assistant only watches.
 
 ### Obstacle log
 
