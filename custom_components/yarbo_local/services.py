@@ -10,17 +10,23 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
-from yarbo_local import YarboError
+from yarbo_local import Action, YarboError
 from yarbo_local.models import local_to_wgs84
 
+from .actions import async_act
 from .const import DOMAIN
 
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 SERVICE_GET_MAP = "get_map"
 SERVICE_GET_OBSTACLES = "get_obstacles"
 ATTR_RUN_ID = "run_id"
+SERVICE_START_PLAN = "start_plan"
+ATTR_PLAN = "plan"
 
 GET_MAP_SCHEMA = vol.Schema({vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string})
+START_PLAN_SCHEMA = vol.Schema(
+    {vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string, vol.Required(ATTR_PLAN): cv.string}
+)
 GET_OBSTACLES_SCHEMA = vol.Schema(
     {vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string, vol.Optional(ATTR_RUN_ID): cv.string}
 )
@@ -77,6 +83,23 @@ def async_setup_services(hass: HomeAssistant) -> None:
             "geojson": _obstacles_geojson(run.to_dict(), ref) if run and ref else None,
         }
 
+    async def start_plan(call: ServiceCall) -> None:
+        """Start a plan by name. For automations, where a picker's state is the wrong tool."""
+        entry = _loaded_entry(hass, call.data[ATTR_CONFIG_ENTRY_ID])
+        coordinator = entry.runtime_data.coordinator
+        wanted = call.data[ATTR_PLAN].strip()
+        options = coordinator.runs.plan_options()
+        by_folded = {name.casefold(): plan_id for name, plan_id in options.items()}
+        plan_id = by_folded.get(wanted.casefold())
+        if plan_id is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="plan_not_found",
+                translation_placeholders={"plan": wanted, "plans": ", ".join(options) or "-"},
+            )
+        await async_act(coordinator, Action.START, plan_id=plan_id)
+
+    hass.services.async_register(DOMAIN, SERVICE_START_PLAN, start_plan, schema=START_PLAN_SCHEMA)
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_OBSTACLES,

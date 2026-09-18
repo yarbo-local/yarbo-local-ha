@@ -216,6 +216,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     async def async_refresh_all(self) -> None:
         await self.robot.snapshot()
         await self.async_refresh_map()
+        await self.runs.async_learn_names()
 
     def _schedule_map_refresh(self) -> None:
         self._cancel_map_refresh()
@@ -239,6 +240,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
             await self.async_refresh_map()
         except YarboError as err:
             _LOGGER.debug("Map refresh after an app edit failed: %s", err)
+        await self.runs.async_learn_names()  # plans are edited in the same sitting
 
     # -- keep awake
 

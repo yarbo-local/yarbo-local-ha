@@ -129,6 +129,9 @@
       },
       "stop": {
         "default": "mdi:stop"
+      },
+      "start": {
+        "default": "mdi:play"
       }
     },
     "image": {
@@ -148,6 +151,11 @@
       "mower": {
         "default": "mdi:robot-mower"
       }
+    },
+    "select": {
+      "plan": {
+        "default": "mdi:clipboard-list-outline"
+      }
     }
   },
   "services": {
@@ -156,6 +164,9 @@
     },
     "get_obstacles": {
       "service": "mdi:map-marker-alert"
+    },
+    "start_plan": {
+      "service": "mdi:play"
     }
   }
 }

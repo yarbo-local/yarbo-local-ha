@@ -17,3 +17,16 @@ get_obstacles:
       required: false
       selector:
         text:
+
+start_plan:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: yarbo_local
+    plan:
+      required: true
+      example: "east lawn plan"
+      selector:
+        text:

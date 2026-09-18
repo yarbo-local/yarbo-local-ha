@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from yarbo_local import Action, YarboError
 
 from . import YarboConfigEntry
-from .actions import async_act
+from .actions import async_act, async_start_selected
 from .const import DOMAIN
 from .coordinator import YarboCoordinator
 from .entity import YarboEntity
@@ -36,6 +36,12 @@ BUTTONS: tuple[YarboButtonDescription, ...] = (
         translation_key="refresh",
         entity_category=EntityCategory.DIAGNOSTIC,
         press_fn=lambda c: c.async_refresh_all(),
+    ),
+    YarboButtonDescription(
+        key="start",
+        translation_key="start",
+        action=Action.START,
+        press_fn=async_start_selected,
     ),
     YarboButtonDescription(
         key="return_to_dock",

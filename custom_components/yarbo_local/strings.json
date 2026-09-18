@@ -242,6 +242,9 @@
       "refresh": {
         "name": "Refresh"
       },
+      "start": {
+        "name": "Start plan"
+      },
       "return_to_dock": {
         "name": "Return to dock"
       },
@@ -294,6 +297,11 @@
       "mower": {
         "name": "Mower"
       }
+    },
+    "select": {
+      "plan": {
+        "name": "Plan"
+      }
     }
   },
   "exceptions": {
@@ -317,9 +325,6 @@
     },
     "not_verified": {
       "message": "This integration cannot {action} yet: the command has not been verified on a real robot."
-    },
-    "start_not_verified": {
-      "message": "No plan is paused, so there is nothing to resume. Starting a plan from here is not available yet; start it in the Yarbo app."
     },
     "refused_robot_offline": {
       "message": "The robot is not connected."
@@ -350,6 +355,12 @@
     },
     "refused_no_head": {
       "message": "No head is attached to the robot."
+    },
+    "no_plan_selected": {
+      "message": "No plan is chosen. Pick one in the Plan selector first, then start."
+    },
+    "plan_not_found": {
+      "message": "The robot has no plan named '{plan}'. Its plans are: {plans}."
     }
   },
   "services": {
@@ -374,6 +385,20 @@
         "run_id": {
           "name": "Run",
           "description": "A run id from an earlier response. Leave empty for the current or most recent run."
+        }
+      }
+    },
+    "start_plan": {
+      "name": "Start plan",
+      "description": "Starts one of the robot's plans by name, after the same checks as the Start button. The robot says nothing when it cannot route to the area; the Activity sensor then shows the error.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Robot",
+          "description": "The Yarbo to start."
+        },
+        "plan": {
+          "name": "Plan",
+          "description": "The plan's name as it appears in the Yarbo app."
         }
       }
     }

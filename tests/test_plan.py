@@ -174,7 +174,7 @@ async def test_controls_exist_only_for_verified_commands(
         for e in er.async_entries_for_config_entry(registry, loaded_entry.entry_id)
         if e.domain == "button"
     }
-    assert keys == {"wake", "refresh", "return_to_dock", "resume", "pause"}, (
+    assert keys == {"wake", "refresh", "start", "return_to_dock", "resume", "pause"}, (
         "stop has no capture yet, so it must not exist. It appears when commands.yaml "
         "marks it verified."
     )
@@ -233,7 +233,7 @@ async def test_resume_and_what_it_says_when_it_cannot(
         await hass.services.async_call(
             "lawn_mower", "start_mowing", {"entity_id": mower}, blocking=True
         )
-    assert start.value.translation_key == "start_not_verified"
+    assert start.value.translation_key == "no_plan_selected"
     assert [name for name, _ in sim.log if name in ("resume", "start_plan")] == [], (
         "a refused action must send nothing"
     )

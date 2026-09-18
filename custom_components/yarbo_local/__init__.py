@@ -39,6 +39,7 @@ PLATFORMS = [
     Platform.EVENT,
     Platform.IMAGE,
     Platform.LAWN_MOWER,
+    Platform.SELECT,
     Platform.SENSOR,
 ]
 
@@ -120,6 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         _LOGGER.warning(
             "Map not loaded for %s; it loads on the next refresh: %s", robot.serial, err
         )
+    await coordinator.runs.async_learn_names()  # for the plan picker; answers while asleep
 
     mac = entry.data.get(CONF_MAC)
     device = dr.async_get(hass).async_get_or_create(

@@ -5,8 +5,8 @@ that, so the detail lives in the Activity sensor and this entity answers the sim
 question: is it mowing, paused, coming home, at rest, or in trouble?
 
 A control is offered only while the command behind it is verified in the library's
-registry. Today that is pausing, resuming and returning to the dock. Starting a plan from
-rest is verified in the library and waits here for a way to choose the plan; stopping
+registry. Today that is starting, pausing, resuming and returning to the dock. Start
+resumes a paused plan; from rest it starts the plan chosen in the Plan picker. Stopping
 appears the day its capture is in, with no change here.
 """
 
@@ -17,14 +17,12 @@ from typing import Any
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import LawnMowerActivity, LawnMowerEntityFeature
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from yarbo_local import Action, Activity
 
 from . import YarboConfigEntry
-from .actions import async_act
-from .const import DOMAIN
+from .actions import async_act, async_start_selected
 from .coordinator import YarboCoordinator
 from .entity import YarboEntity
 
@@ -58,7 +56,7 @@ class YarboMower(YarboEntity, LawnMowerEntity):
             features |= LawnMowerEntityFeature.DOCK
         if robot.can(Action.PAUSE):
             features |= LawnMowerEntityFeature.PAUSE
-        if robot.can(Action.RESUME):
+        if robot.can(Action.RESUME) or robot.can(Action.START):
             features |= LawnMowerEntityFeature.START_MOWING
         return features
 
@@ -84,17 +82,14 @@ class YarboMower(YarboEntity, LawnMowerEntity):
         await async_act(self.coordinator, Action.PAUSE)
 
     async def async_start_mowing(self) -> None:
-        """Resume a paused plan. Starting one from rest waits for start_plan to be verified."""
+        """Resume a paused plan, or from rest start the plan chosen in the Plan picker."""
         state = self.robot_state
         if state.activity is Activity.PAUSED or state.fault is not None:
             await async_act(self.coordinator, Action.RESUME)
             return
         if state.plan_running:
             return  # already mowing; nothing to do and nothing to complain about
-        # Choosing which plan to start comes with start_plan, once it has been captured.
-        raise ServiceValidationError(
-            translation_domain=DOMAIN, translation_key="start_not_verified"
-        )
+        await async_start_selected(self.coordinator)
 
     def _slice(self) -> Any:
         return (self.activity, self.supported_features)

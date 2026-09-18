@@ -31,6 +31,15 @@ views:
                   - start_pause
                   - dock
           - type: tile
+            entity: select.yarbo_SERIAL_plan
+            name: Plan to start
+            features:
+              - type: select-options
+            visibility:  # choosing a plan only matters while none is under way
+              - condition: state
+                entity: sensor.yarbo_SERIAL_plan_status
+                state: none
+          - type: tile
             entity: sensor.yarbo_SERIAL_plan_status
             name: Plan
           - type: tile

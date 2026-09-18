@@ -62,6 +62,7 @@ class RunLog:
         self.plans = PlanTracker.from_dict(plan_data)
         self.plan_feedback: PlanFeedback | None = None
         self.plan_names: dict[int, str] = {}
+        self.selected_plan_id: int | None = None  # chosen in Home Assistant; never sent by itself
         self._obstacle_store = obstacle_store
         self._plan_store = plan_store
         self._obstacle_listeners: list[ObstacleListener] = []
@@ -90,6 +91,20 @@ class RunLog:
         """Name of the plan under way, or of the last one between runs."""
         run = self.plans.current or self.plans.last
         return self.plan_names.get(run.plan_id) if run and run.plan_id is not None else None
+
+    def plan_options(self) -> dict[str, int]:
+        """Plan names for a picker, by the robot's order. Two plans of one name get their id."""
+        names = list(self.plan_names.values())
+        return {
+            (name if names.count(name) == 1 else f"{name} ({plan_id})"): plan_id
+            for plan_id, name in sorted(self.plan_names.items())
+        }
+
+    @callback
+    def select_plan(self, plan_id: int | None) -> None:
+        if plan_id != self.selected_plan_id:
+            self.selected_plan_id = plan_id
+            self._on_change()
 
     def last_completed(self) -> dict[str, float]:
         """When each plan last ran to completion, by name where known, for automations."""
@@ -194,6 +209,8 @@ class RunLog:
         finally:
             self._naming = False
         self.plan_names = {plan.id: plan.name for plan in parse_plans(fb.payload)}
+        if self.selected_plan_id not in self.plan_names:
+            self.selected_plan_id = None  # the chosen plan was deleted in the app
         for run in self.obstacles.runs:
             if run.plan_name is None and run.plan_id in self.plan_names:
                 run.plan_name = self.plan_names[run.plan_id]
