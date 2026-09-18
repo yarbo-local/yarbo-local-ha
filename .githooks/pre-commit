@@ -1,0 +1,16 @@
+#!/bin/sh
+# Refuse a commit whose test fixtures contain your site's real position or serial.
+# Enable once per clone:  git config core.hooksPath .githooks
+# Uses the leak check in a sibling clone of yarbo-local, where your unredacted
+# captures/ live. Without that clone the check is skipped, and says so.
+if git diff --cached --name-only | grep -qE '^(tests/fixtures|dashboards)/'; then
+  here=$(pwd)
+  if [ -f ../yarbo-local/scripts/leak_check.py ]; then
+    (cd ../yarbo-local && uv run --quiet python scripts/leak_check.py "$here/tests/fixtures") || {
+      echo "pre-commit: leak check failed; nothing was committed" >&2
+      exit 1
+    }
+  else
+    echo "pre-commit: ../yarbo-local not found; leak check skipped" >&2
+  fi
+fi

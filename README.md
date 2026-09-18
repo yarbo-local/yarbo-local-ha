@@ -72,8 +72,11 @@ git clone https://github.com/yarbo-local/yarbo-local
 git clone https://github.com/yarbo-local/yarbo-local-ha
 cd yarbo-local-ha
 uv sync --group dev
+git config core.hooksPath .githooks
 uv run pytest
 ```
+
+The hook refuses a commit whose test fixtures contain your own site's position or serial. It compares them with the unredacted captures in your `yarbo-local` clone, which are never committed.
 
 The tests run against the library's simulator, built from redacted captures of a real robot. No hardware needed. To try the integration in a real Home Assistant without a robot, run the simulator against any MQTT broker and point the integration at that broker:
 
