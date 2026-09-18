@@ -1,0 +1,91 @@
+blueprint:
+  name: "Yarbo: run a plan every N days"
+  description: >-
+    Starts one of the robot's plans at a set time, but only when that plan has not run to
+    completion in the last N days, no plan is under way, and nothing you name says "not now"
+    (rain, guests, a holiday switch). A run that was paused, sent home early or stopped does
+    not count as done, so an unfinished lawn is tried again the next day. Everything stays
+    on your network.
+  domain: automation
+  source_url: https://github.com/yarbo-local/yarbo-local-ha/blob/main/blueprints/automation/yarbo_local/mow_every_n_days.yaml
+  input:
+    robot:
+      name: Robot
+      selector:
+        config_entry:
+          integration: yarbo_local
+    plan:
+      name: Plan
+      description: The plan's name, exactly as in the Yarbo app and the Plan selector.
+      selector:
+        text:
+    last_completed:
+      name: Last completed plan sensor
+      description: The robot's "Last completed plan" sensor. Its attributes hold the time for each plan.
+      selector:
+        entity:
+          filter:
+            - integration: yarbo_local
+              domain: sensor
+              device_class: timestamp
+    plan_status:
+      name: Plan status sensor
+      description: The robot's "Plan status" sensor. The plan starts only while it reads "none".
+      selector:
+        entity:
+          filter:
+            - integration: yarbo_local
+              domain: sensor
+    at:
+      name: Time of day
+      default: "10:00:00"
+      selector:
+        time:
+    days:
+      name: Days between completed runs
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 30
+          mode: box
+          unit_of_measurement: days
+    not_now:
+      name: Not while any of these is on
+      description: Optional. Binary sensors, switches or helpers that mean "do not mow", such as a rain sensor.
+      default: []
+      selector:
+        entity:
+          multiple: true
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input at
+
+variables:
+  plan: !input plan
+  days: !input days
+  last_completed: !input last_completed
+  not_now: !input not_now
+
+conditions:
+  - condition: state
+    entity_id: !input plan_status
+    state: "none"
+  - alias: Nothing says not now
+    condition: template
+    value_template: "{{ not_now | select('is_state', 'on') | list | count == 0 }}"
+  - alias: The plan has not completed within the last N days
+    condition: template
+    value_template: >-
+      {% set done = state_attr(last_completed, plan) %}
+      {{ done is none or (now() - as_datetime(done)) >= timedelta(days=days | int) }}
+
+actions:
+  - action: yarbo_local.start_plan
+    data:
+      config_entry_id: !input robot
+      plan: !input plan

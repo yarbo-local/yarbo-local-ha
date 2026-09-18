@@ -69,6 +69,15 @@ The Map image entity is a fallback for places a custom card cannot go, such as p
 - A Yarbo on firmware 3.9 or newer (verified on 3.14.11). Older firmware speaks plain JSON instead of zlib and has not been tested.
 - Home Assistant must be able to reach the robot's IP on TCP port 1883. If the robot lives on its own VLAN, allow that one port from the Home Assistant host. The base station relays the same data and can be used as the address instead of the rover.
 
+## Blueprints
+
+Two automations to import, both under [`blueprints/automation/yarbo_local`](blueprints/automation/yarbo_local):
+
+- **Run a plan every N days.** Starts a plan at a set time, but only when that plan has not run to completion in the last N days, no plan is under way, and nothing you name (a rain sensor, a guests switch) is on. A run that was paused, sent home or stopped does not count as done, so an unfinished lawn is tried again the next day.
+- **Tell me when a plan needs attention.** Notifies when a plan pauses for something the robot will not fix by itself, with the fault in the app's own words when known, and when a run ends early. A pause you made yourself and a low-battery recharge stay quiet.
+
+In Home Assistant: Settings, Automations, Blueprints, Import blueprint, and paste the file's address on GitHub.
+
 ## Install
 
 Through HACS: add `https://github.com/yarbo-local/yarbo-local-ha` as a custom repository of type Integration, install, restart. Or copy `custom_components/yarbo_local` into your `custom_components` folder and restart.

@@ -1,0 +1,73 @@
+blueprint:
+  name: "Yarbo: tell me when a plan needs attention"
+  description: >-
+    Sends a notification when a plan pauses for a reason the robot will not sort out by
+    itself (a fault, an emergency stop, a bumper, being stuck), with the fault in the app's
+    own words when it is known, and when a run ends before it was finished. A pause you made
+    yourself and a low-battery recharge that resumes by itself stay quiet.
+  domain: automation
+  source_url: https://github.com/yarbo-local/yarbo-local-ha/blob/main/blueprints/automation/yarbo_local/plan_needs_attention.yaml
+  input:
+    plan_event:
+      name: Plan event
+      description: The robot's "Plan" event entity.
+      selector:
+        entity:
+          filter:
+            - integration: yarbo_local
+              domain: event
+    notify:
+      name: What to do
+      description: >-
+        Usually a notify action. These variables are available: `title`, `message`,
+        `plan`, `reason`, `fault`, `progress`.
+      selector:
+        action:
+    quiet_reasons:
+      name: Pause reasons that stay quiet
+      default: [manual, low_battery_recharging]
+      selector:
+        select:
+          multiple: true
+          custom_value: true
+          options:
+            - manual
+            - low_battery_recharging
+            - power_restart
+            - emergency_stop
+            - bumper
+            - stuck
+            - fault
+
+mode: queued
+max: 5
+
+triggers:
+  - trigger: state
+    entity_id: !input plan_event
+    not_from: unavailable
+
+variables:
+  quiet_reasons: !input quiet_reasons
+  kind: "{{ trigger.to_state.attributes.event_type }}"
+  plan: "{{ trigger.to_state.attributes.plan | default('The plan', true) }}"
+  reason: "{{ trigger.to_state.attributes.reason | default('', true) }}"
+  fault: "{{ trigger.to_state.attributes.fault | default('', true) }}"
+  progress: "{{ trigger.to_state.attributes.progress | default(none) }}"
+  title: "{{ device_attr(trigger.entity_id, 'name_by_user') or device_attr(trigger.entity_id, 'name') or 'Yarbo' }}"
+  message: >-
+    {% set at = ' at ' ~ progress ~ '%' if progress is not none else '' %}
+    {% if kind == 'plan_paused' %}
+    {{ plan }} paused{{ at }}: {{ fault if fault else reason | replace('_', ' ') }}.
+    {% else %}
+    {{ plan }} ended{{ at }} before it was finished ({{ reason | replace('_', ' ') }}).
+    {% endif %}
+
+conditions:
+  - alias: It is a pause or an ending someone should hear about
+    condition: template
+    value_template: >-
+      {{ (kind == 'plan_paused' and reason not in quiet_reasons)
+         or (kind == 'plan_finished' and reason in ['returned_to_dock', 'stopped']) }}
+
+actions: !input notify
