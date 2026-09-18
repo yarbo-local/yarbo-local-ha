@@ -75,9 +75,6 @@ views:
             entity: sensor.yarbo_SERIAL_battery
             name: Battery
           - type: tile
-            entity: binary_sensor.yarbo_SERIAL_charging
-            name: Charging
-          - type: tile
             entity: binary_sensor.yarbo_SERIAL_rtk_fix
             name: RTK fix
           - type: tile
