@@ -65,5 +65,5 @@ customElements.get("yarbo-local-card") || customElements.define("yarbo-local-car
 	preview: !1,
 	documentationURL: "https://github.com/yarbo-local/yarbo-local-ha",
 	getEntitySuggestion: a
-}), console.info("%c YARBO LOCAL %c 0.1.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
+}), console.info("%c YARBO LOCAL %c 0.2.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
 //#endregion
