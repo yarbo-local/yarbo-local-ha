@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from yarbo_local import Registry, RobotNotFoundError, YarboError, YarboRobot, resolve
 
-from . import client, repairs
+from . import client, frontend, repairs
 from .const import (
     CONF_DNS_NAME,
     CONF_KEEP_AWAKE,
@@ -62,6 +62,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once, independent of any robot being online."""
     async_setup_services(hass)
     async_setup_websocket(hass)
+    await frontend.async_register(hass)
     return True
 
 

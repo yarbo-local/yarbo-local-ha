@@ -3,7 +3,8 @@
   "name": "Yarbo Local",
   "codeowners": ["@clara-mostly-human"],
   "config_flow": true,
-  "dependencies": ["dhcp", "websocket_api"],
+  "after_dependencies": ["frontend"],
+  "dependencies": ["dhcp", "http", "websocket_api"],
   "dhcp": [
     { "hostname": "yarbo*" },
     { "macaddress": "C8FE0F*" },
@@ -15,5 +16,5 @@
   "issue_tracker": "https://github.com/yarbo-local/yarbo-local-ha/issues",
   "loggers": ["yarbo_local"],
   "requirements": ["yarbo-local==0.1.0.dev0"],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

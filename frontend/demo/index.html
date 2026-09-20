@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yarbo Local card demo</title>
+    <style>
+      :root {
+        --primary-color: #03a9f4;
+        --primary-text-color: #212121;
+        --secondary-text-color: #727272;
+        --secondary-background-color: #e5e5e5;
+        --card-background-color: #ffffff;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --success-color: #43a047;
+        --warning-color: #ffa600;
+        --error-color: #db4437;
+        font-family: Roboto, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #fafafa;
+      }
+      body.dark {
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --secondary-background-color: #282828;
+        --card-background-color: #1c1c1c;
+        --divider-color: rgba(225, 225, 225, 0.12);
+        background: #111111;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        display: grid;
+        gap: 12px;
+      }
+      ha-card {
+        display: block;
+        background: var(--card-background-color);
+        border-radius: 12px;
+        border: 1px solid var(--divider-color);
+      }
+      p {
+        color: var(--secondary-text-color);
+        font-size: 14px;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Demo with a mocked Home Assistant: the real driveway map, a simulated robot. <a href="?dark">Dark</a> · <a href="?">Light</a></p>
+      <yarbo-local-card id="card"></yarbo-local-card>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -59,7 +59,21 @@ State comes from the robot's 1 Hz telemetry while it is awake and from its heart
 
 ## Dashboard
 
-The map belongs on a dashboard, through the companion card [yarbo-local-card](https://github.com/yarbo-local/yarbo-local-card): the robot's own map with zones, dock, live position, trail and an optional aerial photo. Install it from HACS as a Dashboard repository. `dashboards/yarbo-local.yaml` in this repository is a ready-made dashboard with the card and the robot's main entities; replace `SERIAL` with your robot's serial.
+The map card comes with the integration. There is nothing else to install and no dashboard resource to add: the integration serves its own browser code, and Home Assistant loads a 2 KB entry file with every page. The drawing code, about 20 KB compressed, is fetched the first time a map is shown.
+
+```yaml
+type: custom:yarbo-local-card
+entity: lawn_mower.yarbo_1234567890abcdef
+title: Yard
+height: 480
+trail: true
+follow: false
+show_status: true
+```
+
+`entity` can be any entity of the robot. The card shows the robot's own map with zones, dock, live position, trail, plan progress, the route home, obstacles, faults by name, and an optional aerial photo of your property that you supply. It loads no map tiles and talks to nothing on the internet. `dashboards/yarbo-local.yaml` in this repository is a ready-made dashboard; replace `SERIAL` with your robot's serial.
+
+If you installed the separate `yarbo-local-card` from HACS before version 0.2, remove it there and delete its entry under Settings, Dashboards, Resources. The card's name and options are unchanged, so dashboards keep working.
 
 The Map image entity is a fallback for places a custom card cannot go, such as picture cards and notifications.
 
@@ -87,12 +101,6 @@ In Home Assistant: Settings, Automations, Blueprints, Import blueprint, and past
 ## Install
 
 Through HACS: add `https://github.com/yarbo-local/yarbo-local-ha` as a custom repository of type Integration, install, restart. Or copy `custom_components/yarbo_local` into your `custom_components` folder and restart.
-
-Until the `yarbo-local` library is published on PyPI, install it into your Home Assistant environment by hand:
-
-```bash
-pip install "yarbo-local @ git+https://github.com/yarbo-local/yarbo-local@main"
-```
 
 ## Set up
 
@@ -136,7 +144,18 @@ git config core.hooksPath .githooks
 uv run pytest
 ```
 
-The hook refuses a commit whose test fixtures contain your own site's position or serial. It compares them with the unredacted captures in your `yarbo-local` clone, which are never committed.
+The hook refuses a commit whose test fixtures or demo data contain your own site's position or serial. It compares them with the unredacted captures in your `yarbo-local` clone, which are never committed.
+
+The browser code lives in `frontend/` (Lit and TypeScript) and builds into `custom_components/yarbo_local/www/`, which is committed because HACS installs the folder as it is:
+
+```bash
+cd frontend
+npm ci
+npm run dev     # demo page with a mocked Home Assistant at http://localhost:5174
+npm run check   # typecheck, tests, build
+```
+
+The robot's map frame is metres with x pointing west and y pointing north. The card draws east to the right and north up, which is a half turn, not a mirror; `frontend/src/geometry.ts` holds the conversion and its tests.
 
 The tests run against the library's simulator, built from redacted captures of a real robot. No hardware needed. To try the integration in a real Home Assistant without a robot, run the simulator against any MQTT broker and point the integration at that broker:
 
@@ -147,4 +166,4 @@ uv run yarbo-local sim protocol/fixtures/3.14.11/get_device_msg-asleep.jsonl --b
 
 ## License
 
-MIT. Yarbo is a trademark of its owner; this project is not affiliated with Yarbo.
+MIT. Dock and robot outline dimensions in the map card come from the steves2j Yarbo map card (MIT). Yarbo is a trademark of its owner; this project is not affiliated with Yarbo.

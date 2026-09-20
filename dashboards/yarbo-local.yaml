@@ -1,4 +1,4 @@
-# Example dashboard for Yarbo Local. Needs the yarbo-local-card resource.
+# Example dashboard for Yarbo Local. The map card comes with the integration.
 # Replace SERIAL with your robot's serial in lower case, as it appears in entity ids.
 # Settings > Dashboards > Add dashboard > New dashboard from scratch, then open it,
 # edit, three-dot menu > Raw configuration editor, and paste this.
