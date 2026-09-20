@@ -1,18 +1,14 @@
 # Home Assistant integration quality scale, audited 2026-09-18 against
 # https://developers.home-assistant.io/docs/core/integration-quality-scale/checklist
 # A custom integration cannot hold a tier officially; this is the same checklist, held honestly.
-# Standing: every Silver rule is done or exempt. One Bronze rule is open: the brands submission.
+# Standing: every Bronze and Silver rule is done or exempt.
 rules:
   # Bronze
   action-setup: done  # services.py, registered in async_setup so automations validate offline
   appropriate-polling:
     status: exempt
     comment: Local push. The robot publishes; nothing is polled.
-  brands:
-    status: todo
-    comment: >-
-      An icon of our own ships in brand/ (Yarbo's logo is not ours to use). Submission to the
-      home-assistant/brands repository is planned with the HACS default submission.
+  brands: done  # icon.png and icon@2x.png of our own design ship in brand/, the way custom integrations supply them since HA 2026.3
   common-modules: done  # coordinator.py, entity.py
   config-flow-test-coverage: done  # config_flow.py is at 100 percent
   config-flow: done
