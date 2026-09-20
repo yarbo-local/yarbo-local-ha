@@ -34,7 +34,7 @@ jobs:
         with:
           repository: yarbo-local/yarbo-local
           path: yarbo-local
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           python-version: "3.14"
       - name: Install
