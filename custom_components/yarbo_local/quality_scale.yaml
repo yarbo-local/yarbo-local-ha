@@ -1,7 +1,7 @@
 # Home Assistant integration quality scale, audited 2026-09-18 against
 # https://developers.home-assistant.io/docs/core/integration-quality-scale/checklist
 # A custom integration cannot hold a tier officially; this is the same checklist, held honestly.
-# Standing: every Silver rule is done or exempt. Two Bronze rules are not, both about publishing.
+# Standing: every Silver rule is done or exempt. One Bronze rule is open: the brands submission.
 rules:
   # Bronze
   action-setup: done  # services.py, registered in async_setup so automations validate offline
@@ -16,12 +16,7 @@ rules:
   common-modules: done  # coordinator.py, entity.py
   config-flow-test-coverage: done  # config_flow.py is at 100 percent
   config-flow: done
-  dependency-transparency:
-    status: todo
-    comment: >-
-      The library is public, MIT, and built and tested by CI at github.com/yarbo-local/yarbo-local,
-      but it is not on PyPI yet, so the pinned requirement cannot be installed by Home Assistant
-      on a fresh system. Needs a PyPI project and a release workflow.
+  dependency-transparency: done  # yarbo-local is on PyPI, published by GitHub Actions from the public repo (trusted publishing)
   docs-actions: done  # README, "What you get" and the controls paragraph
   docs-triggers:
     status: exempt
