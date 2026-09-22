@@ -4,6 +4,7 @@
  * Yarbo element is actually put on screen.
  */
 import { cardSize, checkConfig, gridOptions } from "./config";
+import "./more-info"; // pop-up bodies must exist on every page, so this one is not lazy
 import { defaultEntity, entitySuggestion } from "./suggest";
 import type { CardConfig, HomeAssistant } from "./types";
 

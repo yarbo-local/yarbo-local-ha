@@ -11,6 +11,10 @@ CONF_KEEP_AWAKE = "keep_awake"
 
 DEFAULT_PORT = 1883
 
+# A state attribute Home Assistant's pop-up reads: it draws this element as the body.
+ATTR_MORE_INFO = "custom_ui_more_info"
+MORE_INFO_ELEMENT = "yarbo-local-more-info"
+
 # Seconds to wait for the first heartbeat. An asleep robot heartbeats every 5 s.
 READY_TIMEOUT = 20.0
 PROBE_TIMEOUT = 15.0

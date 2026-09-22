@@ -6,10 +6,12 @@ from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.yarbo_local import frontend
-from custom_components.yarbo_local.const import DOMAIN
+from custom_components.yarbo_local.const import ATTR_MORE_INFO, DOMAIN, MORE_INFO_ELEMENT
+from custom_components.yarbo_local.sensor import YarboSensor
 
 
 def test_the_build_is_in_the_package() -> None:
@@ -48,3 +50,11 @@ async def test_without_a_user_interface_nothing_is_loaded(hass: HomeAssistant) -
     with patch.object(frontend, "add_extra_js_url") as add:
         assert await async_setup_component(hass, DOMAIN, {})
     add.assert_not_called()
+
+
+async def test_battery_opens_our_popup(hass: HomeAssistant, loaded_entry: MockConfigEntry) -> None:
+    """The battery's pop-up body is ours; the attribute that says so is not recorded."""
+    battery = hass.states.get("sensor.yarbo_test_battery")
+    assert battery.attributes[ATTR_MORE_INFO] == MORE_INFO_ELEMENT
+    assert ATTR_MORE_INFO not in hass.states.get("sensor.yarbo_test_activity").attributes
+    assert ATTR_MORE_INFO in YarboSensor._unrecorded_attributes
