@@ -146,6 +146,20 @@ def test_a_charge_records_its_rate_and_energy() -> None:
     assert history.open_charge is None
 
 
+def test_a_sleeping_robot_gives_the_stay_but_no_speed() -> None:
+    """On the dock the robot sleeps and sends nothing; its speed is not guessed across that."""
+    history = RobotHistory()
+    history.on_state(F(T0, battery=41, charging=True))
+    history.on_state(F(T0 + 300, battery=43, charging=True))  # woke once, five minutes later
+    history.on_state(F(T0 + 20_000, battery=100, charging=True))  # woke hours later, full
+    history.on_state(F(T0 + 20_001, battery=100, charging=False))
+    [charge] = history.charges
+    assert charge["battery_start"] == 41
+    assert charge["battery_end"] == 100
+    assert charge["rate_pct_per_h"] is None
+    assert charge["measured_s"] == 0  # no two readings in a row while it was on the charger
+
+
 def test_a_short_charge_has_no_rate() -> None:
     history = RobotHistory()
     history.on_state(F(T0, battery=50, charging=True))

@@ -126,6 +126,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
     )
     (await async_get_manager(hass)).add(coordinator)
     coordinator.async_set_updated_data(state)
+    coordinator.history.on_state(state)  # a charge already under way starts its record now
     coordinator.track_plan_error(state)
     repairs.async_check_firmware(
         hass, robot.serial or "", entry.title, state.firmware, registry.verified_firmware

@@ -97,14 +97,15 @@ class OpenRun:
 
 @dataclass
 class OpenCharge:
+    """A stay on the charger. The robot sleeps there and then sends nothing, so the
+    charging speed comes only from readings taken while it was awake."""
+
     started_at: float
     battery_start: int | None
-    first_at: float | None = None
-    first_battery: int | None = None
-    last_change_at: float | None = None
     last_battery: int | None = None
     energy_j: float = 0.0
-    measured_s: float = 0.0
+    measured_s: float = 0.0  # seconds covered by consecutive readings
+    measured_gain: int = 0  # battery points gained across those readings
 
 
 def _open_run(data: Any) -> OpenRun | None:
@@ -197,15 +198,14 @@ class RobotHistory:
         if charge is None:
             return
         battery = state.battery
-        if battery is not None:
-            if charge.first_battery is None:
-                charge.first_at, charge.first_battery = at, battery
-            if battery != charge.last_battery:
-                charge.last_change_at, charge.last_battery = at, battery
         if dt is not None:
             charge.measured_s += dt
             if power is not None and power > 0:
                 charge.energy_j += power * dt
+            if battery is not None and charge.last_battery is not None:
+                charge.measured_gain += battery - charge.last_battery
+        if battery is not None:
+            charge.last_battery = battery
         self._save_charges()
 
     @callback
@@ -285,15 +285,8 @@ class RobotHistory:
 
     def _close_charge(self, charge: OpenCharge, at: float) -> None:
         rate = None
-        if (
-            charge.first_at is not None
-            and charge.last_change_at is not None
-            and charge.first_battery is not None
-            and charge.last_battery is not None
-            and charge.last_change_at - charge.first_at >= MIN_RATE_SPAN_S
-        ):
-            hours = (charge.last_change_at - charge.first_at) / 3600
-            rate = round((charge.last_battery - charge.first_battery) / hours, 1)
+        if charge.measured_s >= MIN_RATE_SPAN_S:
+            rate = round(charge.measured_gain / (charge.measured_s / 3600), 1)
         self.charges.append(
             {
                 "started_at": charge.started_at,
