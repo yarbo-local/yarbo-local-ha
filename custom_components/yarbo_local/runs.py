@@ -117,6 +117,33 @@ class RunLog:
         run = self.obstacles.get(run_id) if run_id else self.obstacles.latest
         return run.to_dict() if run is not None else None
 
+    # -- keeping and forgetting, for the Settings page
+
+    @callback
+    def set_obstacle_limit(self, runs: int) -> None:
+        """Keep the obstacles of this many recent runs."""
+        self.obstacles.max_runs = runs
+        if len(self.obstacles.runs) > runs:
+            self.obstacles.runs = self.obstacles.runs[-runs:]
+            self._obstacles_changed()
+
+    @callback
+    def clear_obstacles(self) -> int:
+        count = len(self.obstacles.runs)
+        self.obstacles.runs = []
+        self._obstacles_changed()
+        return count
+
+    @callback
+    def clear_plan_memory(self) -> int:
+        """Forget when each plan last finished. A run under way is kept."""
+        count = len(self.plans.last_completed)
+        self.plans.last_completed.clear()
+        if self._plan_store is not None:
+            self._plan_store.async_delay_save(self.plans.to_dict, SAVE_DELAY)
+        self._on_change()
+        return count
+
     # -- inputs
 
     @callback

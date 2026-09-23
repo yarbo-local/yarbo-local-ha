@@ -281,6 +281,18 @@ class BackgroundStore:
         value = data.get(serial)
         return dict(value) if isinstance(value, dict) else None
 
+    async def async_count(self) -> int:
+        return len(await self._load())
+
+    async def async_clear(self, serial: str | None) -> int:
+        """Forget the photo placement for one robot, or for all of them."""
+        data = await self._load()
+        gone = [key for key in data if serial in (None, key)]
+        for key in gone:
+            data.pop(key)
+        await self._store.async_save(data)
+        return len(gone)
+
     async def async_set(self, serial: str, value: dict[str, Any] | None) -> None:
         data = await self._load()
         if value is None:
@@ -290,7 +302,7 @@ class BackgroundStore:
         await self._store.async_save(data)
 
 
-def _backgrounds(hass: HomeAssistant) -> BackgroundStore:
+def backgrounds(hass: HomeAssistant) -> BackgroundStore:
     store = hass.data.get(DATA_BACKGROUNDS)
     if store is None:
         store = hass.data[DATA_BACKGROUNDS] = BackgroundStore(hass)
@@ -330,7 +342,7 @@ async def ws_background_get(
         _not_found(connection, msg)
         return
     serial = entry.runtime_data.coordinator.serial
-    connection.send_result(msg["id"], await _backgrounds(hass).async_get(serial))
+    connection.send_result(msg["id"], await backgrounds(hass).async_get(serial))
 
 
 @require_admin
@@ -350,7 +362,7 @@ async def ws_background_save(
         _not_found(connection, msg)
         return
     serial = entry.runtime_data.coordinator.serial
-    await _backgrounds(hass).async_set(serial, msg["background"])
+    await backgrounds(hass).async_set(serial, msg["background"])
     connection.send_result(msg["id"], msg["background"])
 
 
@@ -364,5 +376,5 @@ async def ws_background_clear(
     if entry is None:
         _not_found(connection, msg)
         return
-    await _backgrounds(hass).async_set(entry.runtime_data.coordinator.serial, None)
+    await backgrounds(hass).async_set(entry.runtime_data.coordinator.serial, None)
     connection.send_result(msg["id"])

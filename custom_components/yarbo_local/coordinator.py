@@ -30,6 +30,7 @@ from yarbo_local import (
 
 from . import repairs
 from .const import DOMAIN, KEEP_AWAKE_INTERVAL
+from .history import RobotHistory
 from .runs import ObstacleListener, RunLog
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,6 +70,10 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         obstacle_data: dict[str, Any] | None = None,
         plan_store: Store[dict[str, Any]] | None = None,
         plan_data: dict[str, Any] | None = None,
+        runs_history_store: Store[dict[str, Any]] | None = None,
+        runs_history_data: dict[str, Any] | None = None,
+        charges_store: Store[dict[str, Any]] | None = None,
+        charges_data: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -95,6 +100,14 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
             plan_store=plan_store,
             plan_data=plan_data,
         )
+        self.history = RobotHistory(
+            runs_store=runs_history_store,
+            runs_data=runs_history_data,
+            charges_store=charges_store,
+            charges_data=charges_data,
+            obstacles_in=self._obstacles_in,
+        )
+        self.runs.add_lifecycle_listener(self.history.on_lifecycle)
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
         self._map_refresh: asyncio.TimerHandle | None = None
@@ -136,6 +149,11 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
 
     async def async_save_obstacles(self) -> None:
         await self.runs.async_save()
+        await self.history.async_save()
+
+    def _obstacles_in(self, run_id: str) -> int | None:
+        run = self.runs.obstacles.get(run_id)
+        return len(run.barriers) if run is not None else None
 
     @callback
     def _obstacles_changed(self) -> None:
@@ -150,6 +168,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     def _on_state(self, state: RobotState) -> None:
         self._track_fault(state)
         self.track_plan_error(state)
+        self.history.on_state(state)  # before the run log, so a run's last frame counts
         self.runs.on_state(state)
         self._expire_feedback(state)
         self.async_set_updated_data(state)
@@ -212,6 +231,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         if leaf in FEEDBACK_LEAVES:
             if leaf == "plan_feedback":
                 self.runs.on_plan_feedback(value)
+                self.history.note_feedback(self.runs.plan_feedback)
             self._set_feedback(leaf, value)
             return
         # The phone app's edits pass through the robot's broker; their acks tell us

@@ -37,7 +37,10 @@ async def test_files_are_served(hass: HomeAssistant, hass_client: ClientSessionG
 
 async def test_home_assistant_is_told_to_load_the_entry_once(hass: HomeAssistant) -> None:
     hass.config.components.add("frontend")
-    with patch.object(frontend, "add_extra_js_url") as add:
+    with (
+        patch.object(frontend, "add_extra_js_url") as add,
+        patch.object(frontend.panel_custom, "async_register_panel"),
+    ):
         assert await async_setup_component(hass, DOMAIN, {})
         await frontend.async_register(hass)  # a second robot changes nothing
     add.assert_called_once()
@@ -58,3 +61,19 @@ async def test_battery_opens_our_popup(hass: HomeAssistant, loaded_entry: MockCo
     assert battery.attributes[ATTR_MORE_INFO] == MORE_INFO_ELEMENT
     assert ATTR_MORE_INFO not in hass.states.get("sensor.yarbo_test_activity").attributes
     assert ATTR_MORE_INFO in YarboSensor._unrecorded_attributes
+
+
+async def test_the_yard_page_is_registered_once(hass: HomeAssistant) -> None:
+    hass.config.components.add("frontend")
+    with (
+        patch.object(frontend, "add_extra_js_url"),
+        patch.object(frontend.panel_custom, "async_register_panel") as panel,
+    ):
+        assert await async_setup_component(hass, DOMAIN, {})
+        await frontend.async_register(hass)
+    panel.assert_called_once()
+    kwargs = panel.call_args.kwargs
+    assert kwargs["frontend_url_path"] == "yard"
+    assert kwargs["webcomponent_name"] == "yarbo-local-panel"
+    assert kwargs["require_admin"] is False
+    assert kwargs["module_url"].startswith(f"{frontend.URL_BASE}/{frontend.ENTRY}?v=")

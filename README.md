@@ -77,6 +77,24 @@ If you installed the separate `yarbo-local-card` from HACS before version 0.2, r
 
 The Map image entity is a fallback for places a custom card cannot go, such as picture cards and notifications.
 
+## The Yard page
+
+The integration adds a **Yard** page to the sidebar, the way HACS adds its own. It has no set-up: installing the integration is enough.
+
+- **Overview** shows each robot's map. The yard-first views described in the design grow here.
+- **Settings** (administrators only) shows the data the integration keeps: what each kind of record holds, how many there are, the dates they span and their size on disk. It sets how long each kind is kept, and clears any of them after a confirmation.
+
+### What is kept
+
+Home Assistant keeps full history for ten days by default, so trends over months need a record of our own. For every robot the integration keeps:
+
+- **Run summaries**: plan, start and end, outcome, working time, area, battery before and after, energy from the battery, energy per square metre, distance, average speed, obstacles and faults. No positions.
+- **Charge summaries**: battery before and after, charging speed, energy into the battery, time on the charger.
+- **Obstacle log**: where the robot met obstacles in recent runs, for the map.
+- **Plan memory**: when each plan last finished.
+
+Energy is the battery's own voltage times its current, summed once a second while the robot is awake. Everything stays in Home Assistant's storage folder; nothing is sent anywhere.
+
 ## Requirements
 
 - Home Assistant 2026.7 or newer.

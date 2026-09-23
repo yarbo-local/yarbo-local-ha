@@ -1,4 +1,4 @@
-"""Serve the integration's own browser code and have Home Assistant load it.
+"""Serve the integration's own browser code, have Home Assistant load it, add the Yard page.
 
 ``www/`` holds what ``frontend/`` builds: one small entry file, loaded on every
 page so that the map card and the pop-ups exist wherever an entity is tapped, and
@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from homeassistant.components import panel_custom
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
@@ -20,6 +21,12 @@ from .const import DOMAIN
 
 URL_BASE = f"/{DOMAIN}/www"
 ENTRY = "yarbo-local.js"
+
+# The integration's own page in the sidebar, the way HACS adds one.
+PANEL_PATH = "yard"
+PANEL_TITLE = "Yard"
+PANEL_ICON = "mdi:robot-mower-outline"
+PANEL_ELEMENT = "yarbo-local-panel"
 WWW = Path(__file__).parent / "www"
 
 DATA_REGISTERED: HassKey[bool] = HassKey(f"{DOMAIN}_frontend")
@@ -41,4 +48,15 @@ async def async_register(hass: HomeAssistant) -> None:
     if "frontend" not in hass.config.components:
         return  # a Home Assistant without a user interface has no page to load it on
     fingerprint = await hass.async_add_executor_job(_fingerprint)
-    add_extra_js_url(hass, f"{URL_BASE}/{ENTRY}?v={fingerprint}")
+    url = f"{URL_BASE}/{ENTRY}?v={fingerprint}"
+    add_extra_js_url(hass, url)
+    await panel_custom.async_register_panel(
+        hass,
+        frontend_url_path=PANEL_PATH,
+        webcomponent_name=PANEL_ELEMENT,
+        sidebar_title=PANEL_TITLE,
+        sidebar_icon=PANEL_ICON,
+        module_url=url,  # the same file every page already has; the browser reuses it
+        require_admin=False,
+        config={},
+    )

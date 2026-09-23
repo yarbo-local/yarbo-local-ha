@@ -27,6 +27,7 @@ from .const import (
     READY_TIMEOUT,
 )
 from .coordinator import YarboCoordinator
+from .data import async_get_manager, async_setup_data_websocket, store_key
 from .services import async_setup_services
 from .websocket_api import async_setup_websocket
 
@@ -62,6 +63,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once, independent of any robot being online."""
     async_setup_services(hass)
     async_setup_websocket(hass)
+    async_setup_data_websocket(hass)
     await frontend.async_register(hass)
     return True
 
@@ -104,8 +106,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         _LOGGER.info("Robot %s moved from %s to %s", robot.serial, configured_host, host)
         hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_HOST: host})
 
-    obstacles: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.obstacles.{robot.serial}")
-    plans: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.plans.{robot.serial}")
+    serial_key = robot.serial or ""  # the same key the coordinator and data manager use
+    obstacles: Store[dict[str, Any]] = Store(hass, 1, store_key("obstacles", serial_key))
+    plans: Store[dict[str, Any]] = Store(hass, 1, store_key("plans", serial_key))
+    run_history: Store[dict[str, Any]] = Store(hass, 1, store_key("history_runs", serial_key))
+    charges: Store[dict[str, Any]] = Store(hass, 1, store_key("history_charges", serial_key))
     coordinator = YarboCoordinator(
         hass,
         entry,
@@ -114,7 +119,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         obstacle_data=await obstacles.async_load(),
         plan_store=plans,
         plan_data=await plans.async_load(),
+        runs_history_store=run_history,
+        runs_history_data=await run_history.async_load(),
+        charges_store=charges,
+        charges_data=await charges.async_load(),
     )
+    (await async_get_manager(hass)).add(coordinator)
     coordinator.async_set_updated_data(state)
     coordinator.track_plan_error(state)
     repairs.async_check_firmware(
@@ -153,6 +163,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> bo
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         repairs.async_clear(hass, entry.runtime_data.coordinator.serial)
+        (await async_get_manager(hass)).remove(entry.runtime_data.coordinator.serial)
         await entry.runtime_data.coordinator.async_save_obstacles()
         await entry.runtime_data.robot.close()
     return unload_ok

@@ -17,6 +17,8 @@ interface CardView extends HTMLElement {
 
 let loading: Promise<unknown> | undefined;
 const load = (): Promise<unknown> => (loading ??= import("./yarbo-local-card"));
+let panelLoading: Promise<unknown> | undefined;
+const loadPanel = (): Promise<unknown> => (panelLoading ??= import("./panel"));
 
 /** `custom:yarbo-local-card`. Holds what Home Assistant gives it until the view has loaded. */
 class YarboLocalCardLoader extends HTMLElement {
@@ -81,6 +83,55 @@ class YarboLocalCardLoader extends HTMLElement {
     this._view = view;
     this.appendChild(view);
   }
+}
+
+/**
+ * The Yard page in the sidebar. Home Assistant sets `hass`, `narrow`, `route` and
+ * `panel` on it; they are held here and handed to the page once its code has loaded.
+ */
+class YarboLocalPanelLoader extends HTMLElement {
+  private _props: Record<string, unknown> = {};
+  private _view?: HTMLElement;
+
+  set hass(value: unknown) { this._set("hass", value); }
+  get hass(): unknown { return this._props.hass; }
+  set narrow(value: unknown) { this._set("narrow", value); }
+  get narrow(): unknown { return this._props.narrow; }
+  set route(value: unknown) { this._set("route", value); }
+  get route(): unknown { return this._props.route; }
+  set panel(value: unknown) { this._set("panel", value); }
+  get panel(): unknown { return this._props.panel; }
+
+  private _set(key: string, value: unknown): void {
+    this._props[key] = value;
+    if (this._view) {
+      (this._view as unknown as Record<string, unknown>)[key] = value;
+    }
+  }
+
+  connectedCallback(): void {
+    this.style.display = "block";
+    this.style.height = "100%";
+    void this._show();
+  }
+
+  private async _show(): Promise<void> {
+    if (this._view) {
+      return;
+    }
+    await loadPanel();
+    if (this._view) {
+      return;
+    }
+    const view = document.createElement("yarbo-local-panel-view");
+    Object.assign(view, this._props);
+    this._view = view;
+    this.appendChild(view);
+  }
+}
+
+if (!customElements.get("yarbo-local-panel")) {
+  customElements.define("yarbo-local-panel", YarboLocalPanelLoader);
 }
 
 if (!customElements.get("yarbo-local-card")) {

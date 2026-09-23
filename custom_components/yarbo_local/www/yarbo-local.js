@@ -50,7 +50,7 @@ function u(e) {
 }
 //#endregion
 //#region src/entry.ts
-var d, f = () => d ??= import("./yarbo-local-view-D8nEIqCE.js"), p = class extends HTMLElement {
+var d, f = () => d ??= import("./yarbo-local-view-DF7H_QGN.js"), p, m = () => p ??= import("./yarbo-local-view-BiU2leZO.js"), h = class extends HTMLElement {
 	_config;
 	_hass;
 	_view;
@@ -86,13 +86,51 @@ var d, f = () => d ??= import("./yarbo-local-view-D8nEIqCE.js"), p = class exten
 		let e = document.createElement("yarbo-local-card-view");
 		this._config && e.setConfig(this._config), this._hass && (e.hass = this._hass), this._view = e, this.appendChild(e);
 	}
+}, g = class extends HTMLElement {
+	_props = {};
+	_view;
+	set hass(e) {
+		this._set("hass", e);
+	}
+	get hass() {
+		return this._props.hass;
+	}
+	set narrow(e) {
+		this._set("narrow", e);
+	}
+	get narrow() {
+		return this._props.narrow;
+	}
+	set route(e) {
+		this._set("route", e);
+	}
+	get route() {
+		return this._props.route;
+	}
+	set panel(e) {
+		this._set("panel", e);
+	}
+	get panel() {
+		return this._props.panel;
+	}
+	_set(e, t) {
+		this._props[e] = t, this._view && (this._view[e] = t);
+	}
+	connectedCallback() {
+		this.style.display = "block", this.style.height = "100%", this._show();
+	}
+	async _show() {
+		if (this._view || (await m(), this._view)) return;
+		let e = document.createElement("yarbo-local-panel-view");
+		Object.assign(e, this._props), this._view = e, this.appendChild(e);
+	}
 };
-customElements.get("yarbo-local-card") || customElements.define("yarbo-local-card", p), window.customCards = window.customCards ?? [], window.customCards.some((e) => e.type === "yarbo-local-card") || window.customCards.push({
+customElements.get("yarbo-local-panel") || customElements.define("yarbo-local-panel", g), customElements.get("yarbo-local-card") || customElements.define("yarbo-local-card", h), window.customCards = window.customCards ?? [], window.customCards.some((e) => e.type === "yarbo-local-card") || window.customCards.push({
 	type: "yarbo-local-card",
 	name: "Yarbo Local",
 	description: "The robot's own map with zones, dock, live position, trail and an optional aerial photo.",
 	preview: !1,
 	documentationURL: "https://github.com/yarbo-local/yarbo-local-ha",
 	getEntitySuggestion: l
-}), console.info("%c YARBO LOCAL %c 0.2.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
+}), console.info("%c YARBO LOCAL %c 0.3.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
 //#endregion
