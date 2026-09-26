@@ -130,6 +130,7 @@
           "bumper": "Bumper pressed",
           "stuck": "Stuck",
           "fault": "Fault",
+          "rain": "Rain detected",
           "unknown": "Unrecognised reason"
         }
       },

@@ -14,7 +14,7 @@ export const ACTIVITY_LABEL: Record<string, string> = {
   error: "Fault",
 };
 
-// StateMSG.planning_paused as the integration names it. Only "fault" is confirmed on the wire.
+// StateMSG.planning_paused as the integration names it. "manual", "fault" and "rain" are confirmed on the wire.
 export const PAUSE_LABEL: Record<string, string> = {
   manual: "Paused by you",
   low_battery_recharging: "Paused: low battery",
@@ -23,6 +23,7 @@ export const PAUSE_LABEL: Record<string, string> = {
   bumper: "Paused: bumper hit",
   stuck: "Stuck",
   fault: "Paused: fault",
+  rain: "Waiting: rain detected",
 };
 
 /** The fault, including from an integration too old to send one. */

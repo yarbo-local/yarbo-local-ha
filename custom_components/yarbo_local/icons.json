@@ -70,7 +70,8 @@
       "pause_reason": {
         "default": "mdi:pause-circle-outline",
         "state": {
-          "not_paused": "mdi:play-circle-outline"
+          "not_paused": "mdi:play-circle-outline",
+          "rain": "mdi:weather-rainy"
         }
       },
       "plan_status": {

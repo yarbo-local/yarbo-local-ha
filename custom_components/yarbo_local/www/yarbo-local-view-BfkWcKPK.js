@@ -1,4 +1,4 @@
-import { i as e, n as t, r as n, t as r } from "./yarbo-local-view-DF7H_QGN.js";
+import { i as e, n as t, r as n, t as r } from "./yarbo-local-view-DIzI5o44.js";
 //#region src/format.ts
 function i(e) {
 	if (e < 1024) return `${e} B`;
