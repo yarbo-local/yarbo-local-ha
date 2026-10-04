@@ -51,6 +51,11 @@ SENSORS: tuple[YarboBinarySensorDescription, ...] = (
         value_fn=lambda s: s.rtk_usable,
     ),
     YarboBinarySensorDescription(
+        key="stop_button",
+        translation_key="stop_button",
+        value_fn=lambda s: s.stop_button_engaged,
+    ),
+    YarboBinarySensorDescription(
         key="person_detection",
         translation_key="person_detection",
         value_fn=lambda s: s.person_detection,

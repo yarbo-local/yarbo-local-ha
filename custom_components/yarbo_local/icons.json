@@ -9,7 +9,8 @@
           "charging": "mdi:battery-charging",
           "returning": "mdi:home-import-outline",
           "paused": "mdi:pause-circle-outline",
-          "error": "mdi:alert-circle"
+          "error": "mdi:alert-circle",
+          "waiting": "mdi:timer-sand"
         }
       },
       "head_type": {
@@ -110,6 +111,12 @@
       },
       "child_lock": {
         "default": "mdi:lock"
+      },
+      "stop_button": {
+        "default": "mdi:octagon-outline",
+        "state": {
+          "on": "mdi:alert-octagon"
+        }
       }
     },
     "button": {

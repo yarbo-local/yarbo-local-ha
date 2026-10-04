@@ -92,6 +92,7 @@
           "calculating_route": "Calculating route",
           "heading_to_area": "Heading to area",
           "working": "Working",
+          "waiting": "Waiting: path may be blocked",
           "waypoint": "Waypoint",
           "completed": "Completed",
           "paused": "Paused",
@@ -234,6 +235,13 @@
       },
       "child_lock": {
         "name": "Child lock"
+      },
+      "stop_button": {
+        "name": "Stop button",
+        "state": {
+          "on": "Pressed",
+          "off": "Released"
+        }
       }
     },
     "button": {

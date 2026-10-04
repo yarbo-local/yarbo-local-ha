@@ -702,6 +702,7 @@ var tt = {
 	calculating_route: "Calculating route",
 	heading_to_area: "Heading to area",
 	working: "Working",
+	waiting: "Waiting: path may be blocked",
 	waypoint: "Waypoint",
 	completed: "Completed",
 	paused: "Paused",

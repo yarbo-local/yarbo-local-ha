@@ -99,11 +99,15 @@ async def test_mower_start_from_rest_starts_the_chosen_plan(
     )
     await asyncio.sleep(0.05)
     await hass.async_block_till_done()
-    assert [name for name, _ in sim.log][-3:] == [
+    sent = [name for name, _ in sim.log]
+    assert sent[-5:] == [
         "set_working_state",
-        "get_controller",
+        "read_all_plan",
+        "check_map_connectivity",
+        "get_map",
         "start_plan",
-    ]
+    ], sent
+    assert "get_controller" not in sent, "started the way the app starts it"
     assert sim.log[-1] == ("start_plan", {"id": 2, "percent": 0})
     assert value(hass, "sensor", sim.serial, "activity") == "calculating_route"
 
