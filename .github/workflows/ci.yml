@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: hassfest
-        # Fails on the requirements check until yarbo-local is on PyPI.
-        continue-on-error: true
         uses: home-assistant/actions/hassfest@master
       - name: HACS
         uses: hacs/action@main

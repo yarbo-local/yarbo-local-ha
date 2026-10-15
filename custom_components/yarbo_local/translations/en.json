@@ -369,7 +369,7 @@
       "message": "No plan is chosen. Pick one in the Plan selector first, then start."
     },
     "plan_not_found": {
-      "message": "The robot has no plan named '{plan}'. Its plans are: {plans}."
+      "message": "The robot has no plan named \"{plan}\". Its plans are: {plans}."
     },
     "plan_start_failed": {
       "message": "The robot could not start the plan: {reason}. {hint}"
