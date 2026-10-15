@@ -33,7 +33,6 @@ from yarbo_local import Activity, RobotState
 from yarbo_local.models import FAULTS, HEAD_TYPES, PAUSE_REASONS
 
 from . import YarboConfigEntry
-from .const import ATTR_MORE_INFO, MORE_INFO_ELEMENT
 from .coordinator import YarboCoordinator
 from .entity import YarboEntity
 
@@ -44,7 +43,6 @@ PARALLEL_UPDATES = 0
 class YarboSensorDescription(SensorEntityDescription):
     value_fn: Callable[[RobotState], StateType]
     attrs_fn: Callable[[RobotState], dict[str, Any]] | None = None
-    our_popup: bool = False  # the pop-up body is ours, from the integration's browser code
 
 
 FAULT_OPTIONS = ["none", *(key for key, _, _ in FAULTS.values()), "unidentified"]
@@ -247,7 +245,6 @@ async def async_setup_entry(
 
 class YarboSensor(YarboEntity, SensorEntity):
     entity_description: YarboSensorDescription
-    _unrecorded_attributes = frozenset({ATTR_MORE_INFO})
 
     def __init__(self, coordinator: YarboCoordinator, description: YarboSensorDescription) -> None:
         super().__init__(coordinator, description.key)
@@ -260,10 +257,9 @@ class YarboSensor(YarboEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         description = self.entity_description
-        attrs = description.attrs_fn(self.robot_state) if description.attrs_fn else {}
-        if description.our_popup:
-            attrs = {**attrs, ATTR_MORE_INFO: MORE_INFO_ELEMENT}
-        return attrs or None
+        if description.attrs_fn is None:
+            return None
+        return description.attrs_fn(self.robot_state) or None
 
     def _slice(self) -> Any:
         return (self.native_value, self.extra_state_attributes)

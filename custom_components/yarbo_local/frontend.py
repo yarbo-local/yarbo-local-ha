@@ -1,8 +1,8 @@
 """Serve the integration's own browser code, have Home Assistant load it, add the Yard page.
 
 ``www/`` holds what ``frontend/`` builds: one small entry file, loaded on every
-page so that the map card and the pop-ups exist wherever an entity is tapped, and
-the drawing code it fetches on first use. Nothing else reaches the browser, and
+page so that the map card exists wherever a dashboard uses it, and the drawing
+code it fetches on first use. Nothing else reaches the browser, and
 nothing here talks to the robot.
 """
 
