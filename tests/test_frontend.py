@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from dataclasses import replace
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.yarbo_local import frontend
+from custom_components.yarbo_local import frontend, sensor
 from custom_components.yarbo_local.const import ATTR_MORE_INFO, DOMAIN, MORE_INFO_ELEMENT
 from custom_components.yarbo_local.sensor import YarboSensor
 
@@ -55,8 +56,26 @@ async def test_without_a_user_interface_nothing_is_loaded(hass: HomeAssistant) -
     add.assert_not_called()
 
 
-async def test_battery_opens_our_popup(hass: HomeAssistant, loaded_entry: MockConfigEntry) -> None:
-    """The battery's pop-up body is ours; the attribute that says so is not recorded."""
+async def test_no_sensor_opens_our_popup_yet(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    """The battery's "hello world" pop-up was a demo; no pop-up has a body of ours yet."""
+    for state in hass.states.async_all("sensor"):
+        assert ATTR_MORE_INFO not in state.attributes, state.entity_id
+
+
+async def test_a_sensor_can_open_our_popup(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_create_robot: MagicMock,
+    mock_resolve: AsyncMock,
+) -> None:
+    """A sensor that asks for our pop-up says so in an attribute that is not recorded."""
+    sensors = tuple(replace(d, our_popup=True) if d.key == "battery" else d for d in sensor.SENSORS)
+    config_entry.add_to_hass(hass)
+    with patch.object(sensor, "SENSORS", sensors):
+        assert await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
     battery = hass.states.get("sensor.yarbo_test_battery")
     assert battery.attributes[ATTR_MORE_INFO] == MORE_INFO_ELEMENT
     assert ATTR_MORE_INFO not in hass.states.get("sensor.yarbo_test_activity").attributes

@@ -79,7 +79,6 @@ SENSORS: tuple[YarboSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda s: s.battery,
-        our_popup=True,
     ),
     YarboSensorDescription(
         key="activity",
