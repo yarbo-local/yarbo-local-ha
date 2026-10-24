@@ -21,7 +21,7 @@ function o(e) {
 }
 //#endregion
 //#region src/entry.ts
-var s, c = () => s ??= import("./yarbo-local-view-9f-dROBY.js"), l, u = () => l ??= import("./yarbo-local-view-B9HUTp_A.js"), d = class extends HTMLElement {
+var s, c = () => s ??= import("./yarbo-local-view-Bo87leMA.js"), l, u = () => l ??= import("./yarbo-local-view-CzihM8_F.js"), d = class extends HTMLElement {
 	_config;
 	_hass;
 	_view;

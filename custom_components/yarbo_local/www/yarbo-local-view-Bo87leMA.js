@@ -717,7 +717,8 @@ var tt = {
 	bumper: "Paused: bumper hit",
 	stuck: "Stuck",
 	fault: "Paused: fault",
-	rain: "Waiting: rain detected"
+	rain: "Waiting: rain detected",
+	blade_blocked: "Paused: cutting blade blocked"
 };
 function q(e) {
 	return e.fault ? e.fault : e.error_code ? {

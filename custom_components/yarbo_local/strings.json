@@ -132,6 +132,7 @@
           "stuck": "Stuck",
           "fault": "Fault",
           "rain": "Rain detected",
+          "blade_blocked": "Cutting blade blocked",
           "unknown": "Unrecognised reason"
         }
       },

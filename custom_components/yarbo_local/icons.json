@@ -72,7 +72,8 @@
         "default": "mdi:pause-circle-outline",
         "state": {
           "not_paused": "mdi:play-circle-outline",
-          "rain": "mdi:weather-rainy"
+          "rain": "mdi:weather-rainy",
+          "blade_blocked": "mdi:saw-blade"
         }
       },
       "plan_status": {
