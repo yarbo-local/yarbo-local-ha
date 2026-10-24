@@ -185,3 +185,11 @@ async def test_get_obstacles_action_returns_reported_obstacles(
     assert response["run"]["id"] == run.id
     assert len(response["run"]["barriers"]) == run.obstacle_count > 0
     assert len(response["geojson"]["features"]) == run.obstacle_count
+    for barrier, feature in zip(run.barriers, response["geojson"]["features"], strict=True):
+        geometry = feature["geometry"]
+        if len(barrier.points) > 2:
+            # an outline, closed as GeoJSON wants
+            assert geometry["type"] == "Polygon"
+            ring = geometry["coordinates"][0]
+            assert ring[0] == ring[-1]
+            assert len(ring) == len(barrier.points) + 1

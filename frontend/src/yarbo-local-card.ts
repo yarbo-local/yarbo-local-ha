@@ -688,7 +688,10 @@ export class YarboLocalCard extends LitElement {
       const cy = cluster.reduce((s, p) => s + p[1], 0) / cluster.length;
       const spread = Math.max(...cluster.map((p) => Math.hypot(p[0] - cx, p[1] - cy)));
       parts.push(svg`<circle class="obstacle-ring" cx=${-cx} cy=${-cy} r=${Math.max(spread + 0.25, 7 * mpp)}></circle>`);
-      if (cluster.length >= 2) {
+      // Each obstacle is the outline of everything the robot reported for it.
+      if (cluster.length >= 3) {
+        parts.push(svg`<polygon class="obstacle" points=${displayPoints(cluster)}></polygon>`);
+      } else if (cluster.length === 2) {
         parts.push(svg`<polyline class="obstacle" points=${displayPoints(cluster)}></polyline>`);
       } else {
         parts.push(svg`<circle class="obstacle-dot" cx=${-cx} cy=${-cy} r=${Math.max(0.08, 2.5 * mpp)}></circle>`);
@@ -797,7 +800,8 @@ export class YarboLocalCard extends LitElement {
   private _obstacleTitle(): string {
     const layer = obstacleLayer(this._feedback.obstacles);
     const scope = layer.active ? "this run" : "the last run";
-    return `${layer.detections.length} ultrasonic and ${layer.barriers.length} mapped obstacles in ${scope}${layer.planName ? ` (${layer.planName})` : ""}`;
+    const count = layer.detections.length + layer.barriers.length;
+    return `${count} obstacle${count === 1 ? "" : "s"} in ${scope}${layer.planName ? ` (${layer.planName})` : ""}`;
   }
 
   private _renderInfo() {

@@ -1803,7 +1803,7 @@ var ft = .55, pt = 6, mt = 14, Q = (e) => N`<svg viewBox="0 0 24 24" aria-hidden
 		}
 		for (let n of i.barriers) {
 			let r = n.reduce((e, t) => e + t[0], 0) / n.length, i = n.reduce((e, t) => e + t[1], 0) / n.length, a = Math.max(...n.map((e) => Math.hypot(e[0] - r, e[1] - i)));
-			t.push(N`<circle class="obstacle-ring" cx=${-r} cy=${-i} r=${Math.max(a + .25, 7 * e)}></circle>`), n.length >= 2 ? t.push(N`<polyline class="obstacle" points=${$(n)}></polyline>`) : t.push(N`<circle class="obstacle-dot" cx=${-r} cy=${-i} r=${Math.max(.08, 2.5 * e)}></circle>`);
+			t.push(N`<circle class="obstacle-ring" cx=${-r} cy=${-i} r=${Math.max(a + .25, 7 * e)}></circle>`), n.length >= 3 ? t.push(N`<polygon class="obstacle" points=${$(n)}></polygon>`) : n.length === 2 ? t.push(N`<polyline class="obstacle" points=${$(n)}></polyline>`) : t.push(N`<circle class="obstacle-dot" cx=${-r} cy=${-i} r=${Math.max(.08, 2.5 * e)}></circle>`);
 		}
 		return t;
 	}
@@ -1874,8 +1874,8 @@ var ft = .55, pt = 6, mt = 14, Q = (e) => N`<svg viewBox="0 0 24 24" aria-hidden
 		return e.detections.length + e.barriers.length;
 	}
 	_obstacleTitle() {
-		let e = G(this._feedback.obstacles), t = e.active ? "this run" : "the last run";
-		return `${e.detections.length} ultrasonic and ${e.barriers.length} mapped obstacles in ${t}${e.planName ? ` (${e.planName})` : ""}`;
+		let e = G(this._feedback.obstacles), t = e.active ? "this run" : "the last run", n = e.detections.length + e.barriers.length;
+		return `${n} obstacle${n === 1 ? "" : "s"} in ${t}${e.planName ? ` (${e.planName})` : ""}`;
 	}
 	_renderInfo() {
 		let e = this._selectedObstacle;

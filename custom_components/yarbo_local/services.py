@@ -124,11 +124,13 @@ def _obstacles_geojson(run: dict[str, Any], ref: tuple[float, float]) -> dict[st
     features: list[dict[str, Any]] = []
     for b in run["barriers"]:
         coords = [lonlat(x, y) for x, y in b["points"]]
-        geometry = (
-            {"type": "LineString", "coordinates": coords}
-            if len(coords) > 1
-            else {"type": "Point", "coordinates": coords[0]}
-        )
+        # Each obstacle is the outline of everything the robot reported for it.
+        if len(coords) > 2:
+            geometry: dict[str, Any] = {"type": "Polygon", "coordinates": [[*coords, coords[0]]]}
+        elif len(coords) == 2:
+            geometry = {"type": "LineString", "coordinates": coords}
+        else:
+            geometry = {"type": "Point", "coordinates": coords[0]}
         features.append(
             {
                 "type": "Feature",
