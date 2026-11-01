@@ -294,6 +294,46 @@ export const cardStyles = css`
     stroke: var(--yl-path);
     stroke-dasharray: 6 4;
   }
+  svg .zone.areas.work {
+    fill: color-mix(in srgb, var(--info-color, #3a7fc0) 30%, transparent);
+    stroke: var(--info-color, #3a7fc0);
+  }
+  svg .zone.areas.done {
+    fill: color-mix(in srgb, var(--success-color, #43a047) 26%, transparent);
+    stroke: var(--success-color, #43a047);
+  }
+  svg .zone.areas.stale {
+    fill: color-mix(in srgb, var(--warning-color, #ffa600) 20%, transparent);
+    stroke: var(--warning-color, #ffa600);
+  }
+  svg .zone.areas.never {
+    fill: color-mix(in srgb, var(--yl-muted) 12%, transparent);
+    stroke: var(--yl-muted);
+  }
+  svg .swath {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.55;
+  }
+  svg .over {
+    fill: none;
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
+  }
+  svg .cut { stroke: var(--success-color, #43a047); }
+  svg .fix-rtk, svg .sig-good { stroke: var(--success-color, #43a047); }
+  svg .fix-float, svg .sig-fair { stroke: var(--warning-color, #ffa600); }
+  svg .fix-gps, svg .sig-poor { stroke: var(--error-color, #db4437); }
+  svg .fix-none, svg .sig-none { stroke: var(--yl-muted); }
+  svg .route-fill { stroke: var(--yl-ink); opacity: 0.85; }
+  svg .route-edge { stroke: var(--info-color, #3a7fc0); stroke-width: 2px; }
+  svg .route-before { stroke: var(--yl-muted); stroke-dasharray: 4 4; opacity: 0.7; }
+  svg .replay-marker {
+    fill: var(--yl-surface);
+    stroke: var(--yl-ink);
+  }
   svg .zone.disabled {
     opacity: 0.45;
   }

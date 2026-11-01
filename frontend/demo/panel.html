@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yard panel demo</title>
+    <style>
+      :root {
+        --primary-color: #2f7d57;
+        --text-primary-color: #fff;
+        --primary-text-color: #1d211f;
+        --secondary-text-color: #5f6862;
+        --primary-background-color: #f4f5f3;
+        --secondary-background-color: #eceee9;
+        --card-background-color: #fff;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --success-color: #43a047;
+        --warning-color: #e39500;
+        --error-color: #db4437;
+        --info-color: #3a7fc0;
+        font-family: Roboto, system-ui, sans-serif;
+        font-size: 14px;
+      }
+      :root.dark {
+        --primary-color: #6cc295;
+        --text-primary-color: #0e1411;
+        --primary-text-color: #e3e7e4;
+        --secondary-text-color: #98a39c;
+        --primary-background-color: #111312;
+        --secondary-background-color: #232724;
+        --card-background-color: #1b1e1c;
+        --divider-color: rgba(225, 225, 225, 0.14);
+      }
+      body { margin: 0; background: var(--primary-background-color); }
+    </style>
+  </head>
+  <body>
+    <yarbo-local-panel id="panel"></yarbo-local-panel>
+    <script type="module" src="./panel-demo.ts"></script>
+  </body>
+</html>

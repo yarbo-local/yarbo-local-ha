@@ -28,8 +28,9 @@ from .const import (
 )
 from .coordinator import YarboCoordinator
 from .data import async_get_manager, async_setup_data_websocket, store_key
+from .panel_api import async_keep_site, async_setup_panel_websocket
 from .services import async_setup_services
-from .websocket_api import async_setup_websocket
+from .websocket_api import async_setup_websocket, map_payload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async_setup_services(hass)
     async_setup_websocket(hass)
     async_setup_data_websocket(hass)
+    async_setup_panel_websocket(hass)
     await frontend.async_register(hass)
     return True
 
@@ -123,6 +125,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
         runs_history_data=await run_history.async_load(),
         charges_store=charges,
         charges_data=await charges.async_load(),
+    )
+    open_run = coordinator.history.open_run
+    await coordinator.tracks.async_load(open_run.started_at if open_run else None)
+    entry.async_on_unload(
+        coordinator.add_map_listener(
+            lambda: async_keep_site(hass, entry, map_payload(entry, coordinator))
+        )
     )
     (await async_get_manager(hass)).add(coordinator)
     coordinator.async_set_updated_data(state)

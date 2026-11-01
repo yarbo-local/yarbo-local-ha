@@ -21,7 +21,7 @@ function o(e) {
 }
 //#endregion
 //#region src/entry.ts
-var s, c = () => s ??= import("./yarbo-local-view-Zk9FgM2P.js"), l, u = () => l ??= import("./yarbo-local-view-JyT9hyWV.js"), d = class extends HTMLElement {
+var s, c = () => s ??= import("./yarbo-local-view-BfC4QY0i.js"), l, u = () => l ??= import("./yarbo-local-view-DRTwUEJL.js"), d = class extends HTMLElement {
 	_config;
 	_hass;
 	_view;
@@ -103,5 +103,5 @@ customElements.get("yarbo-local-panel") || customElements.define("yarbo-local-pa
 	preview: !1,
 	documentationURL: "https://github.com/yarbo-local/yarbo-local-ha",
 	getEntitySuggestion: a
-}), console.info("%c YARBO LOCAL %c 0.3.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
+}), console.info("%c YARBO LOCAL %c 0.4.0 ", "color:#fff;background:#2f8f86;border-radius:3px 0 0 3px", "color:#2f8f86;background:#e8f1f0;border-radius:0 3px 3px 0");
 //#endregion

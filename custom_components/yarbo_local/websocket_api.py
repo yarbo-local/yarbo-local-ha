@@ -32,6 +32,27 @@ from .const import DOMAIN
 from .coordinator import YarboCoordinator
 
 LIVE_MIN_INTERVAL = 0.5
+OFFLINE_LIVE: dict[str, Any] = {
+    "type": "live",
+    "connected": False,
+    "awake": None,
+    "activity": "offline",
+    "battery": None,
+    "charging": False,
+    "error_code": 0,
+    "fault": None,
+    "pause_reason": None,
+    "head": "unknown",
+    "plan_running": False,
+    "x": None,
+    "y": None,
+    "phi": None,
+    "rtk_status": None,
+    "fix_quality": None,
+    "satellites": None,
+    "hdop": None,
+    "reverse": False,
+}
 STORE_VERSION = 1
 DATA_BACKGROUNDS = f"{DOMAIN}_backgrounds"
 
@@ -70,6 +91,23 @@ def _entry(hass: HomeAssistant, msg: dict[str, Any]) -> ConfigEntry | None:
 
 def _not_found(connection: ActiveConnection, msg: dict[str, Any]) -> None:
     connection.send_error(msg["id"], ERR_NOT_FOUND, "No loaded Yarbo Local robot for that target")
+
+
+def _known_entry(hass: HomeAssistant, msg: dict[str, Any]) -> ConfigEntry | None:
+    """The robot's entry even when it is not loaded."""
+    entry_id = msg.get("entry_id")
+    if entity_id := msg.get("entity_id"):
+        registry_entry = er.async_get(hass).async_get(entity_id)
+        if registry_entry is None or registry_entry.platform != DOMAIN:
+            return None
+        entry_id = registry_entry.config_entry_id
+    entry = hass.config_entries.async_get_entry(entry_id) if entry_id else None
+    return entry if entry is not None and entry.domain == DOMAIN else None
+
+
+async def _stored_site(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+    store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.site.{entry.unique_id}")
+    return await store.async_load() or {}
 
 
 def map_payload(entry: ConfigEntry, coordinator: YarboCoordinator) -> dict[str, Any]:
@@ -166,7 +204,12 @@ def live_payload(coordinator: YarboCoordinator) -> dict[str, Any]:
 async def ws_map(hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any]) -> None:
     entry = _entry(hass, msg)
     if entry is None:
-        _not_found(connection, msg)
+        known = _known_entry(hass, msg)
+        stored = (await _stored_site(hass, known)).get("map") if known is not None else None
+        if stored is None:
+            _not_found(connection, msg)
+        else:
+            connection.send_result(msg["id"], stored)
         return
     coordinator: YarboCoordinator = entry.runtime_data.coordinator
     if coordinator.site_map is None:
@@ -204,7 +247,13 @@ def ws_subscribe_live(
 ) -> None:
     entry = _entry(hass, msg)
     if entry is None:
-        _not_found(connection, msg)
+        if _known_entry(hass, msg) is None:
+            _not_found(connection, msg)
+            return
+        # Out of reach: say so once. The card subscribes again when the entity comes back.
+        connection.subscriptions[msg["id"]] = lambda: None
+        connection.send_result(msg["id"])
+        connection.send_message(event_message(msg["id"], OFFLINE_LIVE | {"t": time.time()}))
         return
     coordinator: YarboCoordinator = entry.runtime_data.coordinator
     msg_id = msg["id"]
@@ -337,12 +386,11 @@ BACKGROUND_SCHEMA: dict[vol.Marker, Any] = {
 async def ws_background_get(
     hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any]
 ) -> None:
-    entry = _entry(hass, msg)
-    if entry is None:
+    entry = _known_entry(hass, msg)
+    if entry is None or entry.unique_id is None:
         _not_found(connection, msg)
         return
-    serial = entry.runtime_data.coordinator.serial
-    connection.send_result(msg["id"], await backgrounds(hass).async_get(serial))
+    connection.send_result(msg["id"], await backgrounds(hass).async_get(entry.unique_id))
 
 
 @require_admin

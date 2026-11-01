@@ -27,6 +27,7 @@ import voluptuous as vol
 
 from .const import DOMAIN
 from .history import Retention
+from .tracks import index_key, track_key
 from .websocket_api import backgrounds
 
 if TYPE_CHECKING:
@@ -41,7 +42,8 @@ CHARGES = "charges"
 OBSTACLES = "obstacles"
 PLANS = "plans"
 BACKGROUNDS = "backgrounds"
-DATASETS = (RUNS, CHARGES, OBSTACLES, PLANS, BACKGROUNDS)
+TRACKS = "tracks"
+DATASETS = (RUNS, CHARGES, OBSTACLES, TRACKS, PLANS, BACKGROUNDS)
 
 # What the Settings page offers. Zero days means kept for good.
 DAY_CHOICES = (30, 90, 365, 730, 0)
@@ -119,6 +121,8 @@ class DataManager:
                 cleared += coordinator.runs.clear_obstacles()
             elif dataset == PLANS:
                 cleared += coordinator.runs.clear_plan_memory()
+            elif dataset == TRACKS:
+                cleared += coordinator.tracks.clear()
             else:
                 raise ValueError(dataset)
         await self.async_flush()
@@ -128,6 +132,7 @@ class DataManager:
         for coordinator in self.robots.values():
             await coordinator.history.async_save()
             await coordinator.runs.async_save()
+            await coordinator.tracks.async_save()
 
     async def async_health(self) -> dict[str, Any]:
         await self.async_flush()  # sizes on disk should match what is reported
@@ -172,6 +177,16 @@ class DataManager:
                     {"unit": "runs", "value": self.retention.obstacle_runs, "choices": RUN_CHOICES},
                 ),
                 DatasetHealth(
+                    TRACKS,
+                    serial,
+                    len(coordinator.tracks.keys),
+                    None,
+                    min(coordinator.tracks.keys, default=None),
+                    max(coordinator.tracks.keys, default=None),
+                    sizes.get(index_key(serial), 0),
+                    None,
+                ),
+                DatasetHealth(
                     PLANS,
                     serial,
                     len(coordinator.runs.plans.last_completed),
@@ -206,6 +221,10 @@ class DataManager:
         for key in keys:
             path = self.hass.config.path(".storage", key)
             out[key] = os.path.getsize(path) if os.path.exists(path) else 0
+        for serial, coordinator in self.robots.items():
+            files = [index_key(serial), *(track_key(serial, k) for k in coordinator.tracks.keys)]
+            paths = [self.hass.config.path(".storage", f) for f in files]
+            out[index_key(serial)] = sum(os.path.getsize(p) for p in paths if os.path.exists(p))
         return out
 
     def _recorder_keep_days(self) -> int | None:

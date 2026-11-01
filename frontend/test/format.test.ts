@@ -32,7 +32,7 @@ describe("retentionLabel", () => {
 
 describe("DATASETS", () => {
   it("names every dataset the integration reports", () => {
-    expect(Object.keys(DATASETS).sort()).toEqual(["backgrounds", "charges", "obstacles", "plans", "runs"]);
+    expect(Object.keys(DATASETS).sort()).toEqual(["backgrounds", "charges", "obstacles", "plans", "runs", "tracks"]);
   });
 });
 

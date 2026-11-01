@@ -68,6 +68,18 @@ interface AlignState {
   error?: string;
 }
 
+/** What a page lays over the map: a recorded track, a route preview, a moment of a replay. */
+export interface MapOverlay {
+  /** Wide lines the width of the cut. */
+  swaths?: Array<{ cls: string; points: Point[] }>;
+  /** Thin lines, such as a route. */
+  lines?: Array<{ cls: string; points: Point[] }>;
+  /** Where the robot was. Replaces the live robot on the map. */
+  marker?: { x: number; y: number } | null;
+  /** Obstacle outlines. */
+  barriers?: Point[][];
+}
+
 const icon = (path: string) => svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d=${path}></path></svg>`;
 
 const displayPoints = (points: Point[]): string => points.map(([x, y]) => `${-x},${-y}`).join(" ");
@@ -77,6 +89,9 @@ export class YarboLocalCard extends LitElement {
 
   static override properties = {
     hass: { attribute: false },
+    overlay: { attribute: false },
+    zoneStates: { attribute: false },
+    highlight: { attribute: false },
     _config: { state: true },
     _map: { state: true },
     _live: { state: true },
@@ -94,6 +109,11 @@ export class YarboLocalCard extends LitElement {
   };
 
   declare hass?: HomeAssistant;
+  declare overlay?: MapOverlay;
+  /** A class per area id, for shading the yard by what has happened there. */
+  declare zoneStates?: Record<number, string>;
+  /** Show only this area's outline strongly, and fit the map to it. */
+  declare highlight?: number | null;
   declare _config?: CardConfig;
   declare _map?: MapData;
   declare _live?: LiveEvent;
@@ -113,6 +133,7 @@ export class YarboLocalCard extends LitElement {
   private _target?: string;
   private _resize?: ResizeObserver;
   private _measured = false;
+  private _available?: boolean;
   private _pointers = new Map<number, { x: number; y: number }>();
   private _gesture?: { startX: number; startY: number; view: View; moved: boolean; pinch?: number };
 
@@ -164,6 +185,15 @@ export class YarboLocalCard extends LitElement {
     if (this.hass && entity && entity !== this._target) {
       void this._connect(entity);
     }
+    const state = entity ? this.hass?.states[entity]?.state : undefined;
+    const available = state !== undefined && state !== "unavailable";
+    if (this._available === false && available && entity) {
+      void this._connect(entity); // the robot came back; the old subscription said nothing more
+    }
+    this._available = available;
+    if (changed.has("highlight") && this.highlight != null) {
+      this._fitHighlight();
+    }
     if (!this._resize) {
       const el = this.renderRoot.querySelector<HTMLElement>(".map");
       if (el) {
@@ -188,6 +218,9 @@ export class YarboLocalCard extends LitElement {
     }
     if (changed.has("_map") && this._map && !this._view && this._measured) {
       this._fit();
+      if (this.highlight != null) {
+        this._fitHighlight();
+      }
     }
   }
 
@@ -230,7 +263,11 @@ export class YarboLocalCard extends LitElement {
         entity_id: entity,
       });
     } catch (err) {
-      this._error = `Could not load the Yarbo map: ${(err as { message?: string }).message ?? String(err)}`;
+      const failure = err as { code?: string; message?: string };
+      this._error =
+        failure.code === "not_found"
+          ? "No map saved yet. It appears here once the robot has answered."
+          : `Could not load the Yarbo map: ${failure.message ?? String(err)}`;
     }
   }
 
@@ -277,6 +314,16 @@ export class YarboLocalCard extends LitElement {
         : [pose[0] - 5, pose[1] - 5, pose[0] + 5, pose[1] + 5];
     }
     this._view = fitView(bounds ?? [-10, -10, 10, 10], this._size);
+  }
+
+  private _fitHighlight(): void {
+    const zone = this._map?.zones.find((z) => z.id === this.highlight);
+    if (!zone || !zone.points.length || !this._measured) {
+      return;
+    }
+    const xs = zone.points.map((p) => -p[0]);
+    const ys = zone.points.map((p) => -p[1]);
+    this._view = fitView([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], this._size);
   }
 
   private _toggleFollow(): void {
@@ -380,6 +427,9 @@ export class YarboLocalCard extends LitElement {
     const areas = zones.filter((z) => z.closed && pointInPolygon(local, z.points));
     const hit = line ?? areas.sort((a, b) => (a.area_m2 ?? 0) - (b.area_m2 ?? 0))[0];
     this._selected = hit && hit === this._selected ? undefined : hit;
+    if (hit) {
+      this.dispatchEvent(new CustomEvent("zone-tap", { detail: hit, bubbles: true, composed: true }));
+    }
   }
 
   // -- aerial alignment -------------------------------------------------------------
@@ -531,9 +581,10 @@ export class YarboLocalCard extends LitElement {
     const live = this._live;
     const title = this._config?.title ?? this._map?.title ?? "Yarbo";
     if (this._config?.show_status === false) {
-      return html`<div class="header"><div class="title">${title}</div></div>`;
+      return this._config.title === "" ? nothing : html`<div class="header"><div class="title">${title}</div></div>`;
     }
     const fix = live?.fix_quality;
+    const offline = live ? !live.connected : false;
     const rtk =
       fix === 4
         ? { label: "RTK fixed", cls: "good" }
@@ -548,7 +599,7 @@ export class YarboLocalCard extends LitElement {
         ${live && !live.connected
           ? html`<span class="chip bad">${icon(mdiLanDisconnect)}Offline</span>`
           : nothing}
-        ${live
+        ${live && !offline
           ? html`<span class="chip ${faultOf(live) ? "bad" : ""}"
               >${faultOf(live) ? icon(mdiAlertCircle) : live.awake === false ? icon(mdiSleep) : nothing}${statusLabel(live)}</span
             >`
@@ -561,7 +612,7 @@ export class YarboLocalCard extends LitElement {
               >${icon(live.charging ? mdiBatteryCharging : mdiBattery)}${live.battery}%</span
             >`
           : nothing}
-        ${live
+        ${live && !offline
           ? html`<span class="chip ${rtk.cls}"
               >${icon(mdiSatelliteVariant)}${rtk.label}${live.satellites ? html` · ${live.satellites}` : nothing}</span
             >`
@@ -572,8 +623,8 @@ export class YarboLocalCard extends LitElement {
 
   private _renderFault() {
     const fault = this._live ? faultOf(this._live) : null;
-    if (!fault) {
-      return nothing;
+    if (!fault || this._config?.title === "") {
+      return nothing; // on the Yard panel the top of the page already says it
     }
     const detail = faultDetail(fault, this.hass?.locale?.language);
     return html`<div class="fault" role="alert">
@@ -597,7 +648,8 @@ export class YarboLocalCard extends LitElement {
       <g class=${mapDim ? "dim" : ""}>
         ${map.zones.filter((z) => z.closed).map((z) => this._renderZone(z))}
         ${map.zones.filter((z) => !z.closed).map((z) => this._renderZone(z))} ${this._renderDocks()}
-        ${this._renderFeedback(mpp)} ${this._renderTrail()} ${this._renderRobot(mpp)} ${this._renderLabels(mpp)}
+        ${this._renderFeedback(mpp)} ${this._renderTrail()} ${this._renderOverlay(mpp)}
+        ${this.overlay?.marker === undefined ? this._renderRobot(mpp) : nothing} ${this._renderLabels(mpp)}
       </g>
       ${this._renderPicks(mpp)}
     </svg>`;
@@ -639,7 +691,9 @@ export class YarboLocalCard extends LitElement {
   }
 
   private _renderZone(zone: ZoneData) {
-    const classes = `${zone.family} ${zone.enabled ? "" : "disabled"} ${zone === this._selected ? "selected" : ""}`;
+    const shade = zone.id !== null ? (this.zoneStates?.[zone.id] ?? "") : "";
+    const picked = zone === this._selected || (this.highlight != null && zone.id === this.highlight);
+    const classes = `${zone.family} ${shade} ${zone.enabled ? "" : "disabled"} ${picked ? "selected" : ""}`;
     if (zone.closed) {
       return zone.points.length >= 3
         ? svg`<polygon class="zone ${classes}" points=${displayPoints(zone.points)}></polygon>`
@@ -698,6 +752,26 @@ export class YarboLocalCard extends LitElement {
       }
     }
     return parts;
+  }
+
+  private _renderOverlay(mpp: number) {
+    const overlay = this.overlay;
+    if (!overlay) {
+      return nothing;
+    }
+    const marker = overlay.marker;
+    return svg`${(overlay.swaths ?? []).map(
+      (s) => svg`<polyline class="swath ${s.cls}" stroke-width=${CUT_WIDTH_M} points=${displayPoints(s.points)}></polyline>`,
+    )}
+    ${(overlay.lines ?? []).map((l) => svg`<polyline class="over ${l.cls}" points=${displayPoints(l.points)}></polyline>`)}
+    ${(overlay.barriers ?? []).map((b) =>
+      b.length >= 3
+        ? svg`<polygon class="obstacle" points=${displayPoints(b)}></polygon>`
+        : svg`<circle class="obstacle-dot" cx=${-b[0]![0]} cy=${-b[0]![1]} r=${Math.max(0.1, 3 * mpp)}></circle>`,
+    )}
+    ${marker
+      ? svg`<circle class="replay-marker" cx=${-marker.x} cy=${-marker.y} r=${Math.max(0.35, 7 * mpp)} stroke-width=${2 * mpp}></circle>`
+      : nothing}`;
   }
 
   private _renderTrail() {

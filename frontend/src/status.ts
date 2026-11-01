@@ -13,6 +13,7 @@ export const ACTIVITY_LABEL: Record<string, string> = {
   returning: "Returning",
   charging: "Charging",
   error: "Fault",
+  offline: "Out of reach",
 };
 
 // StateMSG.planning_paused as the integration names it. "manual", "emergency_stop", "fault", "rain" and

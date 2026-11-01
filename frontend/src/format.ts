@@ -70,6 +70,12 @@ export const DATASETS: Record<string, DatasetText> = {
     unit: "runs",
     one: "run",
   },
+  tracks: {
+    title: "Run tracks",
+    about: "Where the robot drove in the last 50 runs, for replay on the History page. Holds positions in your yard.",
+    unit: "runs",
+    one: "run",
+  },
   plans: {
     title: "Plan memory",
     about: "When each plan last finished. Clearing it resets Last completed plan.",

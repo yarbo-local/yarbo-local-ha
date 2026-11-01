@@ -32,6 +32,7 @@ from . import repairs
 from .const import DOMAIN, KEEP_AWAKE_INTERVAL
 from .history import RobotHistory
 from .runs import ObstacleListener, RunLog
+from .tracks import TrackLog
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -108,6 +109,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
             obstacles_in=self._obstacles_in,
         )
         self.runs.add_lifecycle_listener(self.history.on_lifecycle)
+        self.tracks = TrackLog(hass, self.serial)
         self._map_listeners: list[Callable[[], None]] = []
         self._feedback_listeners: list[Callable[[str, Any], None]] = []
         self._map_refresh: asyncio.TimerHandle | None = None
@@ -150,6 +152,7 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
     async def async_save_obstacles(self) -> None:
         await self.runs.async_save()
         await self.history.async_save()
+        await self.tracks.async_save()
 
     def _obstacles_in(self, run_id: str) -> int | None:
         run = self.runs.obstacles.get(run_id)
@@ -170,6 +173,8 @@ class YarboCoordinator(DataUpdateCoordinator[RobotState]):
         self.track_plan_error(state)
         self.history.on_state(state)  # before the run log, so a run's last frame counts
         self.runs.on_state(state)
+        run = self.history.open_run
+        self.tracks.on_state(state, run.started_at if run else None)
         self._expire_feedback(state)
         self.async_set_updated_data(state)
 

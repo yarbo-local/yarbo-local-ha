@@ -8,6 +8,7 @@ export interface HassEntityRegistryEntry {
 
 export interface HomeAssistant {
   callWS<T>(msg: Record<string, unknown>): Promise<T>;
+  themes?: { darkMode?: boolean };
   connection: {
     subscribeMessage<T>(
       callback: (event: T) => void,
