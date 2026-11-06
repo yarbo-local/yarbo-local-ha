@@ -216,6 +216,7 @@ export class YardPageHistory extends LitElement {
     const at = this._at ?? end;
     const point = this._at !== undefined ? pointAt(points, at) : null;
     const card = ctx.card("run", ctx.narrow ? 340 : 520);
+    card.hideLive = true;
     const segments = trackSegments(points, this._colour, at);
     card.overlay = {
       swaths: this._colour === "plain" ? segments : [],
@@ -260,7 +261,7 @@ export class YardPageHistory extends LitElement {
             <div class="tile"><small>Done</small><b>${run.progress !== null ? `${Math.round(run.progress)}%` : "–"}</b></div>
             <div class="tile"><small>Area</small><b>${run.area_m2 ? `${Math.round(run.area_m2)} m²` : "–"}</b><span>${run.planned_area_m2 ? `of ${Math.round(run.planned_area_m2)} m²` : ""}</span></div>
             <div class="tile"><small>Distance</small><b>${run.distance_m ? `${Math.round(run.distance_m)} m` : "–"}</b></div>
-            <div class="tile"><small>Battery</small><b>${run.battery_start ?? "–"} → ${run.battery_end ?? "–"}%</b></div>
+            <div class="tile"><small>Battery used</small><b>${run.battery_used_robot != null ? `${run.battery_used_robot}%` : "–"}</b><span>${run.battery_start ?? "–"} → ${run.battery_end ?? "–"}% at start and end</span></div>
             <div class="tile"><small>Energy</small><b>${run.energy_wh ? `${run.energy_wh} Wh` : "–"}</b><span>${run.wh_per_m2 ? `${run.wh_per_m2.toFixed(2)} Wh/m²` : ""}</span></div>
             <div class="tile"><small>Obstacles</small><b>${run.obstacles ?? "–"}</b></div>
             <div class="tile"><small>Faults</small><b>${run.faults?.length ? run.faults.join(", ") : "None"}</b></div>

@@ -1,4 +1,4 @@
-import { a as e, c as t, d as n, f as r, i, l as a, n as o, o as s, p as c, r as l, s as u, t as d, u as f } from "./yarbo-local-view-BfC4QY0i.js";
+import { a as e, c as t, d as n, f as r, i, l as a, n as o, o as s, p as c, r as l, s as u, t as d, u as f } from "./yarbo-local-view-BR9cOn-r.js";
 //#region src/format.ts
 function p(e) {
 	if (e < 1024) return `${e} B`;
@@ -20,13 +20,13 @@ function ee(e, t, n) {
 	let i = r(e ?? t), a = r(t ?? e);
 	return i === a ? i : `${i} to ${a}`;
 }
-function m(e, t) {
+function te(e, t) {
 	return e === "runs" ? `The last ${t} runs` : t === 0 ? "For good" : t % 365 == 0 ? t === 365 ? "1 year" : `${t / 365} years` : `${t} days`;
 }
-function h(e, t) {
+function m(e, t) {
 	return `${e} ${e === 1 ? t.one : t.unit}`;
 }
-var g = {
+var h = {
 	runs: {
 		title: "Run summaries",
 		about: "One record per run: plan, times, area, energy, distance, obstacles and faults. No positions.",
@@ -63,7 +63,7 @@ var g = {
 		unit: "placements",
 		one: "placement"
 	}
-}, te = class extends a {
+}, g = class extends a {
 	static properties = {
 		hass: { attribute: !1 },
 		_health: { state: !0 },
@@ -116,7 +116,7 @@ var g = {
         <h3>How long to keep</h3>
         <div class="keep">
           ${[...r.values()].map((e) => n`<label>
-              <span>${g[e.dataset]?.title ?? e.dataset}</span>
+              <span>${h[e.dataset]?.title ?? e.dataset}</span>
               <select
                 .value=${String(e.retention.value)}
                 ?disabled=${this._busy}
@@ -127,7 +127,7 @@ var g = {
 		})}
               >
                 ${e.retention.choices.map((t) => n`<option value=${String(t)} ?selected=${t === e.retention.value}>
-                      ${m(e.retention.unit, t)}
+                      ${te(e.retention.unit, t)}
                     </option>`)}
               </select>
             </label>`)}
@@ -148,7 +148,7 @@ var g = {
     `;
 	}
 	_row(e, t) {
-		let r = g[e.dataset] ?? {
+		let r = h[e.dataset] ?? {
 			title: e.dataset,
 			about: "",
 			unit: "records",
@@ -161,12 +161,12 @@ var g = {
           <span class="muted">${r.about}</span>
         </div>
         <div class="count">
-          <b>${h(e.records, r)}</b>
+          <b>${m(e.records, r)}</b>
           <span class="muted">${[e.detail, a].filter(Boolean).join(" · ")}</span>
         </div>
         <div class="size">${p(e.bytes)}</div>
         <div class="act">
-          ${o ? n`<span class="ask">Clear ${h(e.records, r)}? This cannot be undone.</span>
+          ${o ? n`<span class="ask">Clear ${m(e.records, r)}? This cannot be undone.</span>
                 <button class="danger" ?disabled=${this._busy} @click=${() => this._run({
 			type: "yarbo_local/data/clear",
 			dataset: e.dataset,
@@ -235,10 +235,10 @@ var g = {
     }
   `;
 };
-customElements.get("yarbo-local-data-health") || customElements.define("yarbo-local-data-health", te);
+customElements.get("yarbo-local-data-health") || customElements.define("yarbo-local-data-health", g);
 //#endregion
 //#region src/chart.ts
-var _ = 520, ne = 120, v = 40, y = class extends a {
+var _ = 520, ne = 120, v = 40, re = class extends a {
 	static properties = {
 		label: {},
 		unit: {},
@@ -314,10 +314,10 @@ var _ = 520, ne = 120, v = 40, y = class extends a {
     .empty { color: var(--secondary-text-color); font-size: 12px; padding: 18px 0; }
   `;
 };
-customElements.get("yard-chart") || customElements.define("yard-chart", y);
+customElements.get("yard-chart") || customElements.define("yard-chart", re);
 //#endregion
 //#region src/panel-styles.ts
-var b = c`
+var y = c`
   :host { display: block; color: var(--primary-text-color); }
   * { box-sizing: border-box; }
   .stack { display: flex; flex-direction: column; gap: 16px; }
@@ -381,7 +381,7 @@ var b = c`
     .row .chip { display: none; }
     .hide-narrow { display: none; }
   }
-`, re = 604800;
+`, b = 604800;
 function x(e) {
 	return e ? e.charAt(0).toUpperCase() + e.slice(1) : "Unnamed";
 }
@@ -389,7 +389,7 @@ function S(e, t, n) {
 	if (!e) return [];
 	let r = t?.plans ?? [];
 	return e.zones.filter((e) => e.family === "areas" && e.id !== null).map((e) => {
-		let i = e.id, a = r.filter((e) => e.area_ids.includes(i)), o = a.map((e) => t?.last_completed[String(e.id)]).filter((e) => typeof e == "number"), s = o.length ? Math.max(...o) : null, c = t?.progress?.current_area_id === i, l = c ? "work" : s === null ? "never" : n - s <= re ? "done" : "stale", u = c ? "Working now" : s === null ? "No finished run on record" : `Finished ${P(s, n)}`;
+		let i = e.id, a = r.filter((e) => e.area_ids.includes(i)), o = a.map((e) => t?.last_completed[String(e.id)]).filter((e) => typeof e == "number"), s = o.length ? Math.max(...o) : null, c = t?.progress?.current_area_id === i, l = c ? "work" : s === null ? "never" : n - s <= b ? "done" : "stale", u = c ? "Working now" : s === null ? "No finished run on record" : `Finished ${N(s, n)}`;
 		return {
 			zone: e,
 			id: i,
@@ -412,10 +412,10 @@ var w = {
 	leaf_blower: "Blowing leaves from",
 	trimmer: "Trimming"
 }, T = (e) => w[e ?? ""] ?? "Working on";
-function E(e, t, n, r) {
+function ie(e, t, n, r) {
 	let i = t?.title ?? "The robot";
 	if (!t?.reachable || e && !e.connected) {
-		let e = t?.last_seen ? `Last heard ${P(t.last_seen, n)} at ${M(t.last_seen, r)}. ` : "";
+		let e = t?.last_seen ? `Last heard ${N(t.last_seen, n)} at ${j(t.last_seen, r)}. ` : "";
 		return {
 			kind: "off",
 			title: `Can't reach ${i}`,
@@ -435,7 +435,7 @@ function E(e, t, n, r) {
 	if (c) return {
 		kind: "bad",
 		title: `${i} needs you: ${c.description.toLowerCase()}`,
-		detail: `${c.hint}${c.since ? ` Since ${M(c.since, r)}.` : ""}`,
+		detail: `${c.hint}${c.since ? ` Since ${j(c.since, r)}.` : ""}`,
 		percent: t.progress?.percent ?? null,
 		actions: e.plan_running || t.open_run ? [
 			"resume",
@@ -446,7 +446,7 @@ function E(e, t, n, r) {
 	if (e.activity === "paused" || e.pause_reason && e.plan_running) return {
 		kind: "held",
 		title: `${e.pause_reason && d[e.pause_reason] || "Paused"}: ${s}`,
-		detail: D(e),
+		detail: E(e),
 		percent: t.progress?.percent ?? null,
 		actions: [
 			"resume",
@@ -466,7 +466,7 @@ function E(e, t, n, r) {
 		return {
 			kind: "work",
 			title: `${T(e.head)} ${s}${n === null ? "" : `, ${Math.round(n)}%`}`,
-			detail: [r ? `about ${j(r)} left` : "", D(e)].filter(Boolean).join(" · "),
+			detail: [r ? `about ${A(r)} left` : "", E(e)].filter(Boolean).join(" · "),
 			percent: n,
 			actions: [
 				"pause",
@@ -478,7 +478,7 @@ function E(e, t, n, r) {
 	if (e.activity === "returning") return {
 		kind: "work",
 		title: "Heading home",
-		detail: D(e),
+		detail: E(e),
 		percent: null,
 		actions: ["stop"]
 	};
@@ -486,46 +486,46 @@ function E(e, t, n, r) {
 	return {
 		kind: "idle",
 		title: "Nothing running",
-		detail: [D(e), l ? `Last run ${P(l.ended_at ?? l.started_at, n)}: ${A(l)}.` : ""].filter(Boolean).join(" "),
+		detail: [E(e), l ? `Last run ${N(l.ended_at ?? l.started_at, n)}: ${k(l)}.` : ""].filter(Boolean).join(" "),
 		percent: null,
 		actions: ["start"]
 	};
 }
-function D(e) {
+function E(e) {
 	return e.battery === null ? "" : `${e.charging ? "Charging" : "Battery"} ${e.battery}%.`;
 }
-var O = {
+var D = {
 	completed: ["Finished", "ok"],
 	returned_to_dock: ["Came home early", "warn"],
 	stopped: ["Stopped", "warn"],
 	superseded: ["Replaced", ""]
 };
-function k(e) {
-	return e.faults?.length && e.outcome !== "completed" ? ["Fault", "bad"] : O[e.outcome ?? ""] ?? [e.ended_at ? e.outcome ?? "Ended" : "Running", e.ended_at ? "" : "ok"];
+function O(e) {
+	return e.faults?.length && e.outcome !== "completed" ? ["Fault", "bad"] : D[e.outcome ?? ""] ?? [e.ended_at ? e.outcome ?? "Ended" : "Running", e.ended_at ? "" : "ok"];
 }
-function A(e) {
+function k(e) {
 	return e.plan ? x(e.plan) : e.plan_id === null ? "A plan" : `Plan ${e.plan_id}`;
 }
-function j(e) {
+function A(e) {
 	if (e == null) return "–";
 	let t = Math.round(e / 60);
 	if (t < 60) return `${t} min`;
 	let n = t % 60;
 	return n ? `${Math.floor(t / 60)} h ${n} min` : `${t / 60} h`;
 }
-function M(e, t) {
+function j(e, t) {
 	return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleTimeString(t, {
 		hour: "numeric",
 		minute: "2-digit"
 	});
 }
-function N(e, t) {
+function M(e, t) {
 	return (/* @__PURE__ */ new Date(e * 1e3)).toLocaleDateString(t, {
 		month: "short",
 		day: "numeric"
 	});
 }
-function P(e, t) {
+function N(e, t) {
 	let n = (e) => {
 		let t = /* @__PURE__ */ new Date(e * 1e3);
 		return t.setHours(0, 0, 0, 0), t.getTime();
@@ -535,7 +535,7 @@ function P(e, t) {
 		day: "numeric"
 	});
 }
-function F(e) {
+function P(e) {
 	let t = (t) => e.reduce((e, n) => e + (t(n) ?? 0), 0), n = t((e) => e.working_s), r = t((e) => e.area_m2), i = e.filter((e) => e.energy_wh && e.area_m2), a = i.reduce((e, t) => e + (t.area_m2 ?? 0), 0);
 	return {
 		runs: e.length,
@@ -549,7 +549,7 @@ function F(e) {
 		whPerM2: a > 0 ? i.reduce((e, t) => e + (t.energy_wh ?? 0), 0) / a : null
 	};
 }
-function I(e, t) {
+function F(e, t) {
 	let n = [];
 	for (let r of e) {
 		let e = t(r);
@@ -557,21 +557,21 @@ function I(e, t) {
 	}
 	return n;
 }
-function L(e) {
+function I(e) {
 	return e.area_m2 && e.working_s ? e.area_m2 / e.working_s * 3600 : null;
 }
-function R(e) {
+function L(e) {
 	return e === 4 ? "fix-rtk" : e === 5 ? "fix-float" : e ? "fix-gps" : "fix-none";
 }
-function z(e) {
+function R(e) {
 	return e === null ? "sig-none" : e >= -65 ? "sig-good" : e >= -78 ? "sig-fair" : "sig-poor";
 }
-var B = 3;
-function V(e, t, n = Infinity) {
+var z = 3;
+function B(e, t, n = Infinity) {
 	let r = [], i = null, a = null;
 	for (let o of e) {
 		if (o[0] > n) break;
-		let e = t === "fix" ? R(o[3]) : t === "signal" ? z(o[4]) : "cut", s = a !== null && Math.hypot(o[1] - a[1], o[2] - a[2]) > B;
+		let e = t === "fix" ? L(o[3]) : t === "signal" ? R(o[4]) : "cut", s = a !== null && Math.hypot(o[1] - a[1], o[2] - a[2]) > z;
 		(!i || i.cls !== e || s) && (i = {
 			cls: e,
 			points: a && !s ? [[a[1], a[2]]] : []
@@ -579,7 +579,7 @@ function V(e, t, n = Infinity) {
 	}
 	return r.filter((e) => e.points.length >= 2);
 }
-function H(e) {
+function V(e) {
 	if (!e.length) return {
 		rtk: 0,
 		float: 0,
@@ -592,7 +592,7 @@ function H(e) {
 		other: r(e.length - t - n)
 	};
 }
-function U(e, t) {
+function H(e, t) {
 	let n = null;
 	for (let r of e) {
 		if (r[0] > t) break;
@@ -600,11 +600,19 @@ function U(e, t) {
 	}
 	return n;
 }
-var W = [
+var U = {
+	halow: "HaLow",
+	wifi: "Wi-Fi",
+	lte: "4G"
+};
+function W(e) {
+	return e ? U[e] ?? e : "–";
+}
+var G = [
 	[0, "Rows"],
 	[1, "Spiral"],
 	[4, "Rows, fewer turns"]
-], G = [[0, "Counter-clockwise"], [2, "Clockwise"]], K = [
+], K = [[0, "Counter-clockwise"], [2, "Clockwise"]], q = [
 	"Sun",
 	"Mon",
 	"Tue",
@@ -612,7 +620,7 @@ var W = [
 	"Thu",
 	"Fri",
 	"Sat"
-], q = class extends a {
+], J = class extends a {
 	static properties = {
 		ctx: { attribute: !1 },
 		_track: { state: !0 }
@@ -632,7 +640,7 @@ var W = [
 		let e = this.ctx;
 		if (!e) return f;
 		let t = Date.now() / 1e3, r = S(e.map, e.yard, t), i = e.card("overview", e.narrow ? 340 : 480);
-		return i.zoneStates = Object.fromEntries(r.map((e) => [e.id, e.state])), i.overlay = this._track?.points.length ? { swaths: V(this._track.points, "plain") } : void 0, n`<div class="stack">
+		return i.zoneStates = Object.fromEntries(r.map((e) => [e.id, e.state])), i.overlay = this._track?.points.length ? { swaths: B(this._track.points, "plain") } : void 0, n`<div class="stack">
       <div class="grid">
         <section class="card">
           <div class="pad head">
@@ -673,7 +681,7 @@ var W = [
 		return e.length ? n`<section class="card">
       <div class="pad"><h2>On the robot's own schedule</h2></div>
       ${e.map((e) => n`<div class="row">
-          <div class="when"><b>${e.week_day === null ? "" : K[e.week_day % 7] ?? ""}</b>${e.start_time}</div>
+          <div class="when"><b>${e.week_day === null ? "" : q[e.week_day % 7] ?? ""}</b>${e.start_time}</div>
           <div class="what"><b>${e.name || "Schedule"}</b><span>${e.start_time} to ${e.end_time}</span></div>
         </div>`)}
     </section>` : f;
@@ -683,14 +691,14 @@ var W = [
 		if (!t.length) return n`<div class="empty">No runs recorded yet. Each run shows up here when it ends.</div>`;
 		let r = e.hass.locale?.language;
 		return t.map((t) => {
-			let [i, a] = k(t), o = [
-				j(t.working_s),
+			let [i, a] = O(t), o = [
+				A(t.working_s),
 				t.area_m2 ? `${Math.round(t.area_m2)} m²` : "",
 				t.obstacles ? `${t.obstacles} obstacle${t.obstacles === 1 ? "" : "s"}` : ""
 			].filter(Boolean);
 			return n`<button class="row" @click=${() => e.go(`history/${Math.floor(t.started_at)}`)}>
-        <div class="when"><b>${N(t.started_at, r)}</b>${M(t.started_at, r)}</div>
-        <div class="what"><b>${A(t)}${t.progress !== null && t.outcome !== "completed" ? `, ${Math.round(t.progress)}%` : ""}</b><span>${o.join(" · ")}</span></div>
+        <div class="when"><b>${M(t.started_at, r)}</b>${j(t.started_at, r)}</div>
+        <div class="what"><b>${k(t)}${t.progress !== null && t.outcome !== "completed" ? `, ${Math.round(t.progress)}%` : ""}</b><span>${o.join(" · ")}</span></div>
         <span class="chip ${a}">${i}</span>
       </button>`;
 		});
@@ -705,20 +713,20 @@ var W = [
         <div class="tile"><small>State</small><b>${i && r ? l(r) : "Out of reach"}</b></div>
         <div class="tile"><small>Battery</small><b>${r?.battery == null ? "–" : `${r.battery}%`}</b></div>
         <div class="tile"><small>Module</small><b>${(i ? r?.head : t?.head)?.replaceAll("_", " ") ?? "–"}</b></div>
-        <div class="tile"><small>Link</small><b>${i ? t?.network_path ?? "–" : "–"}</b></div>
+        <div class="tile"><small>Link</small><b>${i ? W(t?.network_path) : "–"}</b></div>
         <div class="tile"><small>Firmware</small><b>${t?.firmware ?? "–"}</b></div>
       </div>
     </section>`;
 	}
-	static styles = [b, c`
+	static styles = [y, c`
       .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
       .robot { display: flex; flex-direction: column; gap: 12px; }
     `];
 };
-customElements.get("yard-page-overview") || customElements.define("yard-page-overview", q);
+customElements.get("yard-page-overview") || customElements.define("yard-page-overview", J);
 //#endregion
 //#region src/page-areas.ts
-var J = class extends a {
+var ae = class extends a {
 	static properties = {
 		ctx: { attribute: !1 },
 		selected: { attribute: !1 },
@@ -827,7 +835,7 @@ var J = class extends a {
 		return i.highlight = r.id, i.overlay = this._overlay(r), n`<div class="grid">
       <section class="card">${i}
         <div class="pad small muted">
-          ${this._route ? n`The robot's own route${this._route.total_s ? n`, about ${j(this._route.total_s)}` : f}.${this._before ? " The dashed line is the route before your change." : ""}` : e.yard?.reachable ? C(e.yard.plans, r.id) ? "Asking the robot for its route…" : "No plan holds this area, so the robot has no route to show." : "The robot draws the route itself, so it appears when the robot can be reached."}
+          ${this._route ? n`The robot's own route${this._route.total_s ? n`, about ${A(this._route.total_s)}` : f}.${this._before ? " The dashed line is the route before your change." : ""}` : e.yard?.reachable ? C(e.yard.plans, r.id) ? "Asking the robot for its route…" : "No plan holds this area, so the robot has no route to show." : "The robot draws the route itself, so it appears when the robot can be reached."}
         </div>
       </section>
       <div class="stack">
@@ -837,7 +845,7 @@ var J = class extends a {
           </select></label></div>
           <div class="pad kv facts">
             <span>Size</span><span>${r.zone.area_m2 === null ? "–" : `${Math.round(r.zone.area_m2)} m²`}</span>
-            <span>Last finished</span><span>${r.lastDone ? P(r.lastDone, Date.now() / 1e3) : "Not on record"}</span>
+            <span>Last finished</span><span>${r.lastDone ? N(r.lastDone, Date.now() / 1e3) : "Not on record"}</span>
             <span>Plans</span><span>${r.plans.map((e) => e.name).join(", ") || "None"}</span>
           </div>
         </section>
@@ -869,10 +877,10 @@ var J = class extends a {
       ${r ? n`<div class="muted small">Locked while the robot works a plan.</div>` : f}
       ${e.admin ? f : n`<div class="muted small">Only an administrator can change these.</div>`}
       <div class="field"><span>Pattern</span>
-        <div class="seg">${W.map(([e, r]) => n`<button aria-pressed=${t.algorithm_type === e ? "true" : "false"} ?disabled=${i} @click=${() => this._change("algorithm_type", e)}>${r}</button>`)}</div>
+        <div class="seg">${G.map(([e, r]) => n`<button aria-pressed=${t.algorithm_type === e ? "true" : "false"} ?disabled=${i} @click=${() => this._change("algorithm_type", e)}>${r}</button>`)}</div>
       </div>
       <div class="field"><span>Direction</span>
-        <div class="seg">${G.map(([e, r]) => n`<button aria-pressed=${(t.edge_direction_mode === 2 ? 2 : 0) === e ? "true" : "false"} ?disabled=${i} @click=${() => this._change("edge_direction_mode", e)}>${r}</button>`)}</div>
+        <div class="seg">${K.map(([e, r]) => n`<button aria-pressed=${(t.edge_direction_mode === 2 ? 2 : 0) === e ? "true" : "false"} ?disabled=${i} @click=${() => this._change("edge_direction_mode", e)}>${r}</button>`)}</div>
       </div>
       <div class="field"><label for="angle">Row angle</label>
         <span><input id="angle" type="number" min="0" max="359" .value=${String(t.route_angle ?? 0)} ?disabled=${i}
@@ -894,7 +902,7 @@ var J = class extends a {
       ${this._error ? n`<div class="error" role="alert">${this._error}</div>` : f}
     </section>` : n`<section class="card pad muted small">${this._error ? n`<span class="error">${this._error}</span>` : this._busy ? "Reading the settings…" : "The robot has no settings for this area."}</section>` : n`<section class="card pad muted small">Settings live on the robot and can be read when it is in reach.</section>`;
 	}
-	static styles = [b, c`
+	static styles = [y, c`
       .facts { border-top: 1px solid var(--divider-color); }
       label { font-size: 14px; }
       .settings { display: flex; flex-direction: column; gap: 12px; }
@@ -905,10 +913,10 @@ var J = class extends a {
       .decide span { flex: 1 1 100%; }
     `];
 };
-customElements.get("yard-page-areas") || customElements.define("yard-page-areas", J);
+customElements.get("yard-page-areas") || customElements.define("yard-page-areas", ae);
 //#endregion
 //#region src/page-history.ts
-var Y = [30, 120], ie = class extends a {
+var Y = [30, 120], oe = class extends a {
 	static properties = {
 		ctx: { attribute: !1 },
 		runKey: { attribute: !1 },
@@ -981,7 +989,7 @@ var Y = [30, 120], ie = class extends a {
 	_renderAll() {
 		let e = this.ctx, t = this._runs;
 		if (!t.length) return n`<section class="card empty">No runs recorded yet. Each run is added here when it ends, with where the robot drove.</section>`;
-		let r = e.hass.locale?.language, i = F(t);
+		let r = e.hass.locale?.language, i = P(t);
 		return n`<div class="stack">
       <section class="card">
         <div class="pad"><h2>Every run</h2></div>
@@ -989,12 +997,12 @@ var Y = [30, 120], ie = class extends a {
           <thead><tr><th>Date</th><th>Plan</th><th>Time</th><th>Area</th><th>Done</th><th class="hide-narrow">Distance</th><th class="hide-narrow">Battery</th><th class="hide-narrow">Obstacles</th><th>Ended</th></tr></thead>
           <tbody>
             ${[...t].reverse().map((t) => {
-			let [i, a] = k(t);
+			let [i, a] = O(t);
 			return n`<tr tabindex="0" @click=${() => e.go(`history/${Math.floor(t.started_at)}`)}
                 @keydown=${(n) => n.key === "Enter" && e.go(`history/${Math.floor(t.started_at)}`)}>
-                <td>${N(t.started_at, r)} ${M(t.started_at, r)}</td>
-                <td>${A(t)}</td>
-                <td>${j(t.working_s)}</td>
+                <td>${M(t.started_at, r)} ${j(t.started_at, r)}</td>
+                <td>${k(t)}</td>
+                <td>${A(t.working_s)}</td>
                 <td>${t.area_m2 ? `${Math.round(t.area_m2)} m²` : "–"}</td>
                 <td>${t.progress === null ? "–" : `${Math.round(t.progress)}%`}</td>
                 <td class="hide-narrow">${t.distance_m ? `${(t.distance_m / 1e3).toFixed(1)} km` : "–"}</td>
@@ -1011,7 +1019,7 @@ var Y = [30, 120], ie = class extends a {
           <h2>Totals</h2>
           <div class="tiles">
             <div class="tile"><small>Runs</small><b>${i.runs}</b><span>${i.finished} finished</span></div>
-            <div class="tile"><small>Time working</small><b>${j(i.workingS)}</b></div>
+            <div class="tile"><small>Time working</small><b>${A(i.workingS)}</b></div>
             <div class="tile"><small>Area worked</small><b>${Math.round(i.areaM2)} m²</b></div>
             <div class="tile"><small>Distance</small><b>${(i.distanceM / 1e3).toFixed(1)} km</b></div>
             <div class="tile"><small>Pace</small><b>${i.paceM2H === null ? "–" : `${Math.round(i.paceM2H)} m²/h`}</b></div>
@@ -1022,9 +1030,9 @@ var Y = [30, 120], ie = class extends a {
         </section>
         <section class="card pad stack">
           <h2>Trends</h2>
-          <yard-chart label="Pace" unit="m²/h" .series=${I(t, L)}></yard-chart>
-          <yard-chart label="Energy per m²" unit="Wh" digits="2" .series=${I(t, (e) => e.wh_per_m2)}></yard-chart>
-          <yard-chart label="Obstacles per run" .series=${I(t, (e) => e.obstacles)}></yard-chart>
+          <yard-chart label="Pace" unit="m²/h" .series=${F(t, I)}></yard-chart>
+          <yard-chart label="Energy per m²" unit="Wh" digits="2" .series=${F(t, (e) => e.wh_per_m2)}></yard-chart>
+          <yard-chart label="Obstacles per run" .series=${F(t, (e) => e.obstacles)}></yard-chart>
         </section>
       </div>
     </div>`;
@@ -1032,7 +1040,9 @@ var Y = [30, 120], ie = class extends a {
 	_renderRun() {
 		let e = this.ctx, t = this._run;
 		if (!t) return n`<section class="card empty">That run is not in the record. <a class="link" @click=${() => e.go("history")}>All runs</a></section>`;
-		let r = e.hass.locale?.language, i = this._track?.points ?? [], a = i[i.length - 1]?.[0] ?? 0, o = this._at ?? a, s = this._at === void 0 ? null : U(i, o), c = e.card("run", e.narrow ? 340 : 520), l = V(i, this._colour, o);
+		let r = e.hass.locale?.language, i = this._track?.points ?? [], a = i[i.length - 1]?.[0] ?? 0, o = this._at ?? a, s = this._at === void 0 ? null : H(i, o), c = e.card("run", e.narrow ? 340 : 520);
+		c.hideLive = !0;
+		let l = B(i, this._colour, o);
 		c.overlay = {
 			swaths: this._colour === "plain" ? l : [],
 			lines: this._colour === "plain" ? [] : l,
@@ -1042,7 +1052,7 @@ var Y = [30, 120], ie = class extends a {
 			} : null,
 			barriers: this._barriers
 		};
-		let u = H(i), [d, p] = k(t);
+		let u = V(i), [d, p] = O(t);
 		return n`<div class="stack">
       <a class="link back" @click=${() => e.go("history")}>‹ All runs</a>
       <div class="grid">
@@ -1065,18 +1075,18 @@ var Y = [30, 120], ie = class extends a {
 			signal: "Signal"
 		}[e]}</button>`)}</div>
               </div>
-              ${s ? n`<div class="pad small muted moment">${M(t.started_at + s[0], r)} · fix ${s[3] ?? "–"} · HaLow ${s[4] ?? "–"} dBm · battery ${s[5] ?? "–"}%</div>` : f}
+              ${s ? n`<div class="pad small muted moment">${j(t.started_at + s[0], r)} · fix ${s[3] ?? "–"} · HaLow ${s[4] ?? "–"} dBm · battery ${s[5] ?? "–"}%</div>` : f}
               ${this._colour === "plain" ? f : n`<div class="pad legend small">${this._colour === "fix" ? n`<span><i style="background:var(--success-color,#43a047);border-color:var(--success-color,#43a047)"></i>RTK fixed</span><span><i style="background:var(--warning-color,#ffa600);border-color:var(--warning-color,#ffa600)"></i>RTK float</span><span><i style="background:var(--error-color,#db4437);border-color:var(--error-color,#db4437)"></i>GPS only</span>` : n`<span><i style="background:var(--success-color,#43a047);border-color:var(--success-color,#43a047)"></i>Above −65 dBm</span><span><i style="background:var(--warning-color,#ffa600);border-color:var(--warning-color,#ffa600)"></i>−65 to −78</span><span><i style="background:var(--error-color,#db4437);border-color:var(--error-color,#db4437)"></i>Below −78</span>`}</div>`}` : n`<div class="pad small muted">${this._track === void 0 ? "Loading the track…" : "No track for this run: it ran before tracks were recorded."}</div>`}
         </section>
         <section class="card pad stack">
-          <h2>${A(t)} <span class="chip ${p}">${d}</span></h2>
-          <div class="muted small">${N(t.started_at, r)}, ${M(t.started_at, r)}${t.ended_at ? ` to ${M(t.ended_at, r)}` : ""}</div>
+          <h2>${k(t)} <span class="chip ${p}">${d}</span></h2>
+          <div class="muted small">${M(t.started_at, r)}, ${j(t.started_at, r)}${t.ended_at ? ` to ${j(t.ended_at, r)}` : ""}</div>
           <div class="tiles">
-            <div class="tile"><small>Working time</small><b>${j(t.working_s)}</b></div>
+            <div class="tile"><small>Working time</small><b>${A(t.working_s)}</b></div>
             <div class="tile"><small>Done</small><b>${t.progress === null ? "–" : `${Math.round(t.progress)}%`}</b></div>
             <div class="tile"><small>Area</small><b>${t.area_m2 ? `${Math.round(t.area_m2)} m²` : "–"}</b><span>${t.planned_area_m2 ? `of ${Math.round(t.planned_area_m2)} m²` : ""}</span></div>
             <div class="tile"><small>Distance</small><b>${t.distance_m ? `${Math.round(t.distance_m)} m` : "–"}</b></div>
-            <div class="tile"><small>Battery</small><b>${t.battery_start ?? "–"} → ${t.battery_end ?? "–"}%</b></div>
+            <div class="tile"><small>Battery used</small><b>${t.battery_used_robot == null ? "–" : `${t.battery_used_robot}%`}</b><span>${t.battery_start ?? "–"} → ${t.battery_end ?? "–"}% at start and end</span></div>
             <div class="tile"><small>Energy</small><b>${t.energy_wh ? `${t.energy_wh} Wh` : "–"}</b><span>${t.wh_per_m2 ? `${t.wh_per_m2.toFixed(2)} Wh/m²` : ""}</span></div>
             <div class="tile"><small>Obstacles</small><b>${t.obstacles ?? "–"}</b></div>
             <div class="tile"><small>Faults</small><b>${t.faults?.length ? t.faults.join(", ") : "None"}</b></div>
@@ -1086,14 +1096,14 @@ var Y = [30, 120], ie = class extends a {
       </div>
     </div>`;
 	}
-	static styles = [b, c`
+	static styles = [y, c`
       .back { font-size: 14px; align-self: flex-start; }
       .player { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-top: 1px solid var(--divider-color); }
       .player input[type="range"] { flex: 1 1 160px; min-width: 120px; accent-color: var(--primary-color); }
       .moment, .legend.pad { padding-top: 0; }
     `];
 };
-customElements.get("yard-page-history") || customElements.define("yard-page-history", ie);
+customElements.get("yard-page-history") || customElements.define("yard-page-history", oe);
 //#endregion
 //#region src/page-robot.ts
 var X = [
@@ -1135,7 +1145,7 @@ var X = [
 		digits: 1,
 		color: "var(--error-color, #db4437)"
 	}
-], ae = [[24, "24 h"], [168, "7 days"]], oe = class extends a {
+], se = [[24, "24 h"], [168, "7 days"]], ce = class extends a {
 	static properties = {
 		ctx: { attribute: !1 },
 		_hours: { state: !0 },
@@ -1149,6 +1159,16 @@ var X = [
 	_entity(e) {
 		let t = this.ctx;
 		if (t) return Object.values(t.hass.entities ?? {}).find((t) => t.platform === "yarbo_local" && t.entity_id.startsWith("sensor.") && t.entity_id.endsWith(e))?.entity_id;
+	}
+	_reading(e) {
+		let t = this._entity(e), n = t ? this.ctx?.hass.states[t] : void 0;
+		if (!n || n.state === "unavailable" || n.state === "unknown") return;
+		let r = n.attributes.unit_of_measurement;
+		return typeof r == "string" ? `${n.state} ${r}` : n.state;
+	}
+	_unit(e, t) {
+		let n = e ? this.ctx?.hass.states[e]?.attributes.unit_of_measurement : void 0;
+		return typeof n == "string" ? n : t;
 	}
 	willUpdate(e) {
 		let t = `${this.ctx?.entity}:${this._hours}`;
@@ -1191,17 +1211,17 @@ var X = [
               <div class="tile"><small>Voltage</small><b>${t?.voltage == null ? "–" : `${t.voltage.toFixed(1)} V`}</b></div>
               <div class="tile"><small>Current</small><b>${t?.current == null ? "–" : `${t.current.toFixed(1)} A`}</b></div>
               <div class="tile"><small>RTK</small><b>${r?.fix_quality === 4 ? "Fixed" : r?.fix_quality === 5 ? "Float" : r?.fix_quality ? "GPS only" : "–"}</b><span>${r?.satellites ? `${r.satellites} satellites` : ""}</span></div>
-              <div class="tile"><small>Link</small><b>${t?.network_path ?? "–"}</b><span>${t?.halow_rssi == null ? "" : `HaLow ${t.halow_rssi} dBm`}</span></div>
+              <div class="tile"><small>Link</small><b>${W(t?.network_path)}</b><span>${t?.halow_rssi == null ? "" : `HaLow ${t.halow_rssi} dBm`}</span></div>
               <div class="tile"><small>Module</small><b>${(t?.head ?? r?.head ?? "–").replaceAll("_", " ")}</b></div>
-              <div class="tile"><small>Temperature</small><b>${t?.temperature == null ? "–" : `${t.temperature}°`}</b></div>
+              <div class="tile"><small>Temperature</small><b>${this._reading("_ambient_temperature") ?? (t?.temperature == null ? "–" : `${t.temperature} °C`)}</b></div>
               <div class="tile"><small>Stop button</small><b>${t?.stop_button_engaged == null ? "–" : t.stop_button_engaged ? "Pressed" : "Released"}</b></div>
             </div>` : n`<div class="muted">Nothing read from the robot yet.</div>`}
       </section>
       <section class="card pad stack">
         <h2>Over time
-          <span class="seg">${ae.map(([e, t]) => n`<button aria-pressed=${this._hours === e ? "true" : "false"} @click=${() => this._hours = e}>${t}</button>`)}</span>
+          <span class="seg">${se.map(([e, t]) => n`<button aria-pressed=${this._hours === e ? "true" : "false"} @click=${() => this._hours = e}>${t}</button>`)}</span>
         </h2>
-        ${a.length ? n`<div class="cols">${a.map((e) => n`<yard-chart .label=${e.label} .unit=${e.unit} .digits=${e.digits ?? 0} .color=${e.color ?? "var(--primary-color, #1e88e5)"}
+        ${a.length ? n`<div class="cols">${a.map((e) => n`<yard-chart .label=${e.label} .unit=${this._unit(e.entity, e.unit)} .digits=${e.digits ?? 0} .color=${e.color ?? "var(--primary-color, #1e88e5)"}
                 .series=${this._series[e.entity] ?? []}></yard-chart>`)}</div>` : f}
         ${a.length < X.length ? n`<div class="muted small">Some readings have no chart because their sensors are off by default. Switch them on from this robot's device page to start collecting them.</div>` : f}
       </section>
@@ -1218,8 +1238,8 @@ var X = [
         </section>
         <section class="card">
           <div class="pad"><h2>Recent charges</h2></div>
-          ${s.map((e) => n`<div class="row"><div class="when"><b>${N(e.started_at, i)}</b>${M(e.started_at, i)}</div>
-              <div class="what"><b>${e.battery_start ?? "–"} → ${e.battery_end ?? "–"}%</b><span>${j(e.on_charger_s)}${e.rate_pct_per_h ? ` · ${e.rate_pct_per_h}%/h` : ""}</span></div></div>`)}
+          ${s.map((e) => n`<div class="row"><div class="when"><b>${M(e.started_at, i)}</b>${j(e.started_at, i)}</div>
+              <div class="what"><b>${e.battery_start ?? "–"} → ${e.battery_end ?? "–"}%</b><span>${A(e.on_charger_s)}${e.rate_pct_per_h ? ` · ${e.rate_pct_per_h}%/h` : ""}</span></div></div>`)}
           ${s.length ? f : n`<div class="empty">None recorded yet.</div>`}
         </section>
       </div>
@@ -1232,11 +1252,11 @@ var X = [
       </section>
     </div>`;
 	}
-	static styles = [b, c`
+	static styles = [y, c`
       h2 .seg { font-weight: 400; }
     `];
 };
-customElements.get("yard-page-robot") || customElements.define("yard-page-robot", oe);
+customElements.get("yard-page-robot") || customElements.define("yard-page-robot", ce);
 //#endregion
 //#region src/panel.ts
 var Z = [
@@ -1270,7 +1290,7 @@ var Z = [
 		label: "Settings",
 		admin: !0
 	}
-], se = 6e4, ce = {
+], le = 6e4, ue = {
 	off: t,
 	bad: e,
 	held: s,
@@ -1306,7 +1326,7 @@ var Z = [
 		super(), this.narrow = !1, this._busy = !1;
 	}
 	connectedCallback() {
-		super.connectedCallback(), this._timer = setInterval(() => void this._refresh(), se), this._robot && this._subscribe();
+		super.connectedCallback(), this._timer = setInterval(() => void this._refresh(), le), this._robot && this._subscribe();
 	}
 	disconnectedCallback() {
 		super.disconnectedCallback(), clearInterval(this._timer), this._stream(void 0);
@@ -1473,9 +1493,9 @@ var Z = [
 		}
 	}
 	_renderNow() {
-		let e = E(this._live, this._yard, Date.now() / 1e3, this.hass?.locale?.language), t = e.actions.includes("start"), r = this._yard?.plans ?? [], i = this._plan ?? r[0]?.id;
+		let e = ie(this._live, this._yard, Date.now() / 1e3, this.hass?.locale?.language), t = e.actions.includes("start"), r = this._yard?.plans ?? [], i = this._plan ?? r[0]?.id;
 		return n`<section class="card now ${e.kind}" aria-live="polite">
-      <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d=${ce[e.kind]}></path></svg></span>
+      <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d=${ue[e.kind]}></path></svg></span>
       <div class="say">
         <b>${e.title}</b>
         ${e.detail ? n`<span>${e.detail}</span>` : f}
@@ -1504,7 +1524,7 @@ var Z = [
       </div>
     </div>` : f;
 	}
-	static styles = [b, c`
+	static styles = [y, c`
       :host {
         display: block;
         min-height: 100%;

@@ -41,6 +41,8 @@ TARGET: dict[str | vol.Marker, Any] = {
     vol.Optional("entry_id"): str,
 }
 RECENT_CHARGES = 60
+SITE_REFRESH_S = 600.0
+VOLATILE = frozenset({"robot", "last_seen"})
 ROBOT_READ_TIMEOUT = 8.0
 
 # The settings the panel may change, because what they do has been seen on the robot.
@@ -104,11 +106,18 @@ async def async_load_site(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, 
 
 
 async def async_save_site(hass: HomeAssistant, serial: str, **changes: Any) -> None:
-    """Keep what the robot last told us. A write only when something changed."""
+    """Keep what the robot last told us.
+
+    Its readings and the time it was seen change on every read, so they alone are
+    written at most every few minutes; the map, plans or schedules are written as soon
+    as they change.
+    """
     store = _site_store(hass, serial)
     site = await store.async_load() or {}
     fresh = {**site, **changes}
-    if fresh != site:
+    lasting = {k: v for k, v in fresh.items() if k not in VOLATILE}
+    stale = time.time() - float(site.get("last_seen") or 0) >= SITE_REFRESH_S
+    if lasting != {k: v for k, v in site.items() if k not in VOLATILE} or stale:
         await store.async_save(fresh)
 
 
@@ -419,6 +428,25 @@ async def _write_settings(
         await robot.update_mower_area_params(area_id, **params)
     if "algorithm_type" in changes:
         await robot.update_area(area_id, algorithm_type=changes["algorithm_type"])
+
+
+@callback
+def async_note_seen(hass: HomeAssistant, entry: ConfigEntry, at: float | None) -> None:
+    """The link to the robot dropped: keep when it was last heard, for the offline page."""
+    if at is None:
+        return
+    entry.async_create_background_task(
+        hass,
+        _async_store_seen(hass, entry_serial(entry), at),
+        name=f"{DOMAIN}_seen_{entry.entry_id}",
+    )
+
+
+async def _async_store_seen(hass: HomeAssistant, serial: str, at: float) -> None:
+    store = _site_store(hass, serial)
+    site = await store.async_load() or {}
+    if float(site.get("last_seen") or 0) < at:
+        await store.async_save({**site, "last_seen": at})
 
 
 @callback

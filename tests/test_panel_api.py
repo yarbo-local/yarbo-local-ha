@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
@@ -9,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
-from custom_components.yarbo_local import tracks
+from custom_components.yarbo_local import panel_api, tracks
 from custom_components.yarbo_local.tracks import TrackLog
 from yarbo_local import Simulator
 from yarbo_local.simulator import MOWER_AREA_PARAMS_DEFAULT
@@ -276,3 +277,35 @@ async def test_tracks_are_pruned_and_a_finished_run_can_be_read_back(
     assert len(log.keys) == tracks.MAX_RUNS
     assert 500 not in log.keys
     assert await log.async_get(500.0) is None
+
+
+async def test_the_stored_copy_is_not_rewritten_for_readings_alone(
+    hass: HomeAssistant,
+    loaded_entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_storage: dict,
+    sim: Simulator,
+) -> None:
+    client = await hass_ws_client(hass)
+    await _ask(client, type="yarbo_local/yard", entry_id=loaded_entry.entry_id)
+    first = hass_storage[f"yarbo_local.site.{sim.serial}"]["data"]["last_seen"]
+    await _ask(client, type="yarbo_local/yard", entry_id=loaded_entry.entry_id)
+    assert hass_storage[f"yarbo_local.site.{sim.serial}"]["data"]["last_seen"] == first
+
+    sim.plans = [{"id": 8, "name": "New", "areaIds": [1], "selfOrder": False}]
+    await _ask(client, type="yarbo_local/yard", entry_id=loaded_entry.entry_id)
+    assert hass_storage[f"yarbo_local.site.{sim.serial}"]["data"]["plans"][0]["name"] == "New"
+
+
+async def test_losing_the_robot_keeps_when_it_was_last_heard(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry, hass_storage: dict, sim: Simulator
+) -> None:
+    key = f"yarbo_local.site.{sim.serial}"
+    later = time.time() + 100
+    panel_api.async_note_seen(hass, loaded_entry, later)
+    await hass.async_block_till_done()
+    assert hass_storage[key]["data"]["last_seen"] == later
+
+    panel_api.async_note_seen(hass, loaded_entry, later - 50)  # an older frame never wins
+    await hass.async_block_till_done()
+    assert hass_storage[key]["data"]["last_seen"] == later

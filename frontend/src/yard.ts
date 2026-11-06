@@ -464,6 +464,12 @@ export function pointAt(points: TrackPoint[], seconds: number): TrackPoint | nul
   return found;
 }
 
+const LINKS: Record<string, string> = { halow: "HaLow", wifi: "Wi-Fi", lte: "4G" };
+
+export function linkName(path: string | null | undefined): string {
+  return path ? (LINKS[path] ?? path) : "–";
+}
+
 export const PATTERNS: Array<[number, string]> = [
   [0, "Rows"],
   [1, "Spiral"],

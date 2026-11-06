@@ -6,6 +6,7 @@ import {
   areaViews,
   clock,
   duration,
+  linkName,
   outcomeOf,
   runTitle,
   shortDate,
@@ -147,7 +148,7 @@ export class YardPageOverview extends LitElement {
         <div class="tile"><small>State</small><b>${reachable && live ? statusLabel(live) : "Out of reach"}</b></div>
         <div class="tile"><small>Battery</small><b>${live?.battery != null ? `${live.battery}%` : "–"}</b></div>
         <div class="tile"><small>Module</small><b>${(reachable ? live?.head : robot?.head)?.replaceAll("_", " ") ?? "–"}</b></div>
-        <div class="tile"><small>Link</small><b>${reachable ? (robot?.network_path ?? "–") : "–"}</b></div>
+        <div class="tile"><small>Link</small><b>${reachable ? linkName(robot?.network_path) : "–"}</b></div>
         <div class="tile"><small>Firmware</small><b>${robot?.firmware ?? "–"}</b></div>
       </div>
     </section>`;

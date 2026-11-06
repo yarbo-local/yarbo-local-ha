@@ -92,6 +92,7 @@ export class YarboLocalCard extends LitElement {
     overlay: { attribute: false },
     zoneStates: { attribute: false },
     highlight: { attribute: false },
+    hideLive: { attribute: false },
     _config: { state: true },
     _map: { state: true },
     _live: { state: true },
@@ -114,6 +115,8 @@ export class YarboLocalCard extends LitElement {
   declare zoneStates?: Record<number, string>;
   /** Show only this area's outline strongly, and fit the map to it. */
   declare highlight?: number | null;
+  /** Leave out the live robot, its trail and its feedback, for a page about the past. */
+  declare hideLive?: boolean;
   declare _config?: CardConfig;
   declare _map?: MapData;
   declare _live?: LiveEvent;
@@ -648,8 +651,8 @@ export class YarboLocalCard extends LitElement {
       <g class=${mapDim ? "dim" : ""}>
         ${map.zones.filter((z) => z.closed).map((z) => this._renderZone(z))}
         ${map.zones.filter((z) => !z.closed).map((z) => this._renderZone(z))} ${this._renderDocks()}
-        ${this._renderFeedback(mpp)} ${this._renderTrail()} ${this._renderOverlay(mpp)}
-        ${this.overlay?.marker === undefined ? this._renderRobot(mpp) : nothing} ${this._renderLabels(mpp)}
+        ${this.hideLive ? nothing : html`${this._renderFeedback(mpp)} ${this._renderTrail()}`} ${this._renderOverlay(mpp)}
+        ${this.overlay?.marker === undefined && !this.hideLive ? this._renderRobot(mpp) : nothing} ${this._renderLabels(mpp)}
       </g>
       ${this._renderPicks(mpp)}
     </svg>`;

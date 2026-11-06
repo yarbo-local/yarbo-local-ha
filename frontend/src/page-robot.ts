@@ -1,7 +1,7 @@
 import { LitElement, html, css, nothing, type PropertyValues } from "lit";
 import type { YardContext } from "./context";
 import { pageStyles } from "./panel-styles";
-import { clock, duration, shortDate, type Series } from "./yard";
+import { clock, duration, linkName, shortDate, type Series } from "./yard";
 
 interface HistoryRow {
   s: string;
@@ -62,6 +62,22 @@ export class YardPageRobot extends LitElement {
     )?.entity_id;
   }
 
+  /** A sensor's state in the unit Home Assistant shows it in, such as °F. */
+  private _reading(suffix: string): string | undefined {
+    const entity = this._entity(suffix);
+    const state = entity ? this.ctx?.hass.states[entity] : undefined;
+    if (!state || state.state === "unavailable" || state.state === "unknown") {
+      return undefined;
+    }
+    const unit = state.attributes.unit_of_measurement;
+    return typeof unit === "string" ? `${state.state} ${unit}` : state.state;
+  }
+
+  private _unit(entity: string | undefined, fallback: string): string {
+    const unit = entity ? this.ctx?.hass.states[entity]?.attributes.unit_of_measurement : undefined;
+    return typeof unit === "string" ? unit : fallback;
+  }
+
   override willUpdate(_changed: PropertyValues<this>): void {
     const key = `${this.ctx?.entity}:${this._hours}`;
     if (this.ctx && key !== this._loadedFor) {
@@ -120,9 +136,9 @@ export class YardPageRobot extends LitElement {
               <div class="tile"><small>Voltage</small><b>${robot?.voltage != null ? `${robot.voltage.toFixed(1)} V` : "–"}</b></div>
               <div class="tile"><small>Current</small><b>${robot?.current != null ? `${robot.current.toFixed(1)} A` : "–"}</b></div>
               <div class="tile"><small>RTK</small><b>${live?.fix_quality === 4 ? "Fixed" : live?.fix_quality === 5 ? "Float" : live?.fix_quality ? "GPS only" : "–"}</b><span>${live?.satellites ? `${live.satellites} satellites` : ""}</span></div>
-              <div class="tile"><small>Link</small><b>${robot?.network_path ?? "–"}</b><span>${robot?.halow_rssi != null ? `HaLow ${robot.halow_rssi} dBm` : ""}</span></div>
+              <div class="tile"><small>Link</small><b>${linkName(robot?.network_path)}</b><span>${robot?.halow_rssi != null ? `HaLow ${robot.halow_rssi} dBm` : ""}</span></div>
               <div class="tile"><small>Module</small><b>${(robot?.head ?? live?.head ?? "–").replaceAll("_", " ")}</b></div>
-              <div class="tile"><small>Temperature</small><b>${robot?.temperature != null ? `${robot.temperature}°` : "–"}</b></div>
+              <div class="tile"><small>Temperature</small><b>${this._reading("_ambient_temperature") ?? (robot?.temperature != null ? `${robot.temperature} °C` : "–")}</b></div>
               <div class="tile"><small>Stop button</small><b>${robot?.stop_button_engaged == null ? "–" : robot.stop_button_engaged ? "Pressed" : "Released"}</b></div>
             </div>`
           : html`<div class="muted">Nothing read from the robot yet.</div>`}
@@ -135,7 +151,7 @@ export class YardPageRobot extends LitElement {
         </h2>
         ${charts.length
           ? html`<div class="cols">${charts.map(
-              (c) => html`<yard-chart .label=${c.label} .unit=${c.unit} .digits=${c.digits ?? 0} .color=${c.color ?? "var(--primary-color, #1e88e5)"}
+              (c) => html`<yard-chart .label=${c.label} .unit=${this._unit(c.entity, c.unit)} .digits=${c.digits ?? 0} .color=${c.color ?? "var(--primary-color, #1e88e5)"}
                 .series=${this._series[c.entity as string] ?? []}></yard-chart>`,
             )}</div>`
           : nothing}

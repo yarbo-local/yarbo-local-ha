@@ -8,6 +8,7 @@ export interface MapElement extends HTMLElement {
   overlay?: MapOverlay;
   zoneStates?: Record<number, string>;
   highlight?: number | null;
+  hideLive?: boolean;
   setConfig(config: CardConfig): void;
 }
 

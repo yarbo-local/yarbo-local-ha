@@ -28,7 +28,7 @@ from .const import (
 )
 from .coordinator import YarboCoordinator
 from .data import async_get_manager, async_setup_data_websocket, store_key
-from .panel_api import async_keep_site, async_setup_panel_websocket
+from .panel_api import async_keep_site, async_note_seen, async_setup_panel_websocket
 from .services import async_setup_services
 from .websocket_api import async_setup_websocket, map_payload
 
@@ -131,6 +131,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: YarboConfigEntry) -> boo
     entry.async_on_unload(
         coordinator.add_map_listener(
             lambda: async_keep_site(hass, entry, map_payload(entry, coordinator))
+        )
+    )
+    entry.async_on_unload(
+        robot.session.add_connection_listener(
+            lambda connected: (
+                None if connected else async_note_seen(hass, entry, robot.state.last_frame_at)
+            )
         )
     )
     (await async_get_manager(hass)).add(coordinator)

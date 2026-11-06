@@ -1355,6 +1355,7 @@ var ht = .55, gt = 6, _t = 14, Q = (e) => N`<svg viewBox="0 0 24 24" aria-hidden
 		overlay: { attribute: !1 },
 		zoneStates: { attribute: !1 },
 		highlight: { attribute: !1 },
+		hideLive: { attribute: !1 },
 		_config: { state: !0 },
 		_map: { state: !0 },
 		_live: { state: !0 },
@@ -1816,8 +1817,8 @@ var ht = .55, gt = 6, _t = 14, Q = (e) => N`<svg viewBox="0 0 24 24" aria-hidden
       <g class=${c ? "dim" : ""}>
         ${t.zones.filter((e) => e.closed).map((e) => this._renderZone(e))}
         ${t.zones.filter((e) => !e.closed).map((e) => this._renderZone(e))} ${this._renderDocks()}
-        ${this._renderFeedback(o)} ${this._renderTrail()} ${this._renderOverlay(o)}
-        ${this.overlay?.marker === void 0 ? this._renderRobot(o) : F} ${this._renderLabels(o)}
+        ${this.hideLive ? F : M`${this._renderFeedback(o)} ${this._renderTrail()}`} ${this._renderOverlay(o)}
+        ${this.overlay?.marker === void 0 && !this.hideLive ? this._renderRobot(o) : F} ${this._renderLabels(o)}
       </g>
       ${this._renderPicks(o)}
     </svg>`;
